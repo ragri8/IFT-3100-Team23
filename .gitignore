@@ -367,3 +367,12 @@ ASALocalRun/
 
 # MSBuild Binary and Structured Log
 *.binlog
+
+
+#others:
+*.sln
+*.vcxproj
+*.exp
+*.ilk
+*.pdb
+icon.rc
