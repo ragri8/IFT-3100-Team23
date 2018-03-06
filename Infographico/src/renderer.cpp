@@ -6,6 +6,7 @@ void Renderer::setup() {
 	screenWidth = ofGetWidth();
 	screenHeight = ofGetHeight();
 
+	is2D = true;
 
 	//Ajout des écouteurs de l'interface
 	boutonEllipse.addListener(this, &Renderer::boutonEllipsePressed);
@@ -14,59 +15,89 @@ void Renderer::setup() {
 	boutonTriangleRectangle.addListener(this, &Renderer::boutonTriangleRectanglePressed);
 	boutonLigne.addListener(this, &Renderer::boutonLignePressed);
 
+	boutonMode2D.addListener(this, &Renderer::boutonMode2DPressed);
+	boutonMode3D.addListener(this, &Renderer::boutonMode3DPressed);
+	boutonImporterImage.addListener(this, &Renderer::boutonImporterImagePressed);
+	boutonExporterImage.addListener(this, &Renderer::boutonExporterImagePressed);
 	boutonUndo.addListener(this, &Renderer::boutonUndoPressed);
 	boutonRedo.addListener(this, &Renderer::boutonRedoPressed);
+	
+
 
 
 	//menu
-	menu.setup();
-	menu.add(titreMenu.setup("Menu", ""));
-	menu.add(boutonMode2D.setup("Mode 2D"));
-	menu.add(boutonMode3D.setup("Mode 3D"));
-	menu.add(boutonImporterImage.setup("Importer image"));
-	menu.add(boutonExporterImage.setup("Exporter image"));
-	menu.add(boutonUndo.setup("<-Undo"));
-	menu.add(boutonRedo.setup("Redo->"));
+	guiMenu.setup();
+	guiMenu.add(titreMenu.setup("Menu", "2D"));
+	guiMenu.add(boutonMode2D.setup("Mode 2D"));
+	guiMenu.add(boutonMode3D.setup("Mode 3D"));
+	guiMenu.add(boutonImporterImage.setup("Importer image"));
+	guiMenu.add(boutonExporterImage.setup("Exporter image"));
+	guiMenu.add(boutonUndo.setup("<-Undo"));
+	guiMenu.add(boutonRedo.setup("Redo->"));
 
-	menu.setPosition(0, 0);
+	guiMenu.setPosition(0, 0);
 	
 
-	//dessin
-	dessin.setup();
-	dessin.add(titreDessin.setup("Dessin", ""));
-	dessin.add(sliderPosX.setup("Position en X", screenWidth / 2, 0, screenWidth));
-	dessin.add(sliderPosY.setup("Position en Y", screenHeight / 2, 0, screenHeight));
-	dessin.add(sliderRotation.setup("Rotation", 0, 0, 360));
+	//Interface dessin
+	guiDessin.setup();
+	guiDessin.add(titreDessin.setup("Dessin", ""));
+	guiDessin.add(sliderPosX.setup("Position en X", screenWidth / 2, 0, screenWidth));
+	guiDessin.add(sliderPosY.setup("Position en Y", screenHeight / 2, 0, screenHeight));
+	guiDessin.add(sliderRotation.setup("Rotation", 0, 0, 360));
 
 	//Conversion de la largeur (float) en string
 	largeurForme = 0.0;
 	std::ostringstream oss1;
 	oss1 << largeurForme;
-	dessin.add(labelLargeur.setup("Largeur", oss1.str()));
+	guiDessin.add(labelLargeur.setup("Largeur", oss1.str()));
 	//Conversion de l'hauteur (float) en string
 	hauteurForme = 0.0;
 	std::ostringstream oss2;
 	oss2 << hauteurForme;
-	dessin.add(labelHauteur.setup("Hauteur", oss2.str()));
-	dessin.add(choixDeForme.setup("Choix de Forme", ""));
-	dessin.add(boutonLigne.setup("Ligne"));
-	dessin.add(boutonRectangle.setup("Rectangle"));
-	dessin.add(boutonTriangle.setup("Triangle"));
-	dessin.add(boutonEllipse.setup("Cercle"));
-	dessin.add(boutonTriangleRectangle.setup("Triangle rectangle"));
+	guiDessin.add(labelHauteur.setup("Hauteur", oss2.str()));
+	guiDessin.add(choixDeForme.setup("Choix de Forme", ""));
+	guiDessin.add(boutonLigne.setup("Ligne"));
+	guiDessin.add(boutonRectangle.setup("Rectangle"));
+	guiDessin.add(boutonTriangle.setup("Triangle"));
+	guiDessin.add(boutonEllipse.setup("Cercle"));
+	guiDessin.add(boutonTriangleRectangle.setup("Triangle rectangle"));
 
-	dessin.add(labelPropriteteDuDessin.setup("Propriete du dessin", ""));
-	dessin.add(sliderEpaisseurLigneContour.setup("Epaisseur contour", 1, 1, 50));
+	guiDessin.add(labelPropriteteDuDessin.setup("Propriete du dessin", ""));
+	guiDessin.add(sliderEpaisseurLigneContour.setup("Epaisseur contour", 1, 1, 50));
 
-	dessin.add(labelCouleur.setup("Couleur", ""));
-	dessin.setPosition(screenWidth - dessin.getWidth(), 0);
+	guiDessin.add(labelCouleur.setup("Couleur", ""));
+	guiDessin.setPosition(screenWidth - guiDessin.getWidth(), 0);
 
+
+	//interface pour modèle 3D
+	guiModel3D.setup();
+	
+	guiModel3D.add(labelRotation3D.setup("Rotation 3D", ""));
+	guiModel3D.add(sliderRotation3DX.setup("Rotation X", 0, 0, 360));
+	guiModel3D.add(sliderRotation3DY.setup("Rotation Y", 0, 0, 360));
+	guiModel3D.add(sliderRotation3DZ.setup("Rotation Z", 0, 0, 360));
+	
+	guiModel3D.add(labelGenerationPrimitiveGeometrique.setup("Primitive geometrique 3D", ""));
+	guiModel3D.add(boutonPyramide.setup("Pyramide"));
+	guiModel3D.add(boutonCube.setup("Cube"));
+
+	guiModel3D.add(labelGenerationModel3D.setup("Modele 3D", ""));
+	guiModel3D.add(boutonDragon.setup("Generer Dragon"));
+	guiModel3D.add(boutonAngelLucy.setup("Generer Angel Lucy"));
+	guiModel3D.add(animer.setup("Animer", false));
+	guiModel3D.setPosition(-guiModel3D.getWidth(), 0);
+
+	ofxButton boutonPyramide;
+	ofxButton boutonCube;
+	ofxButton boutonDragon;
+	ofxButton boutonAngelLucy;
 	
 }
 
 void Renderer::draw() {
-	menu.draw();
-	dessin.draw();
+	guiMenu.draw();
+	guiDessin.draw();
+	guiModel3D.draw();
 }
 
 void Renderer::update() {
@@ -115,17 +146,31 @@ void Renderer::boutonTriangleRectanglePressed() {
 }
 
 void Renderer::boutonMode2DPressed() {
-
+	is2D = true;
+	titreMenu.setup("Menu", "2D");
+	guiDessin.setPosition(screenWidth - guiDessin.getWidth(), 0);
+	guiModel3D.setPosition(-guiModel3D.getWidth(), 0);
 }
 void Renderer::boutonMode3DPressed() {
+	is2D = false;
+	titreMenu.setup("Menu", "3D");
+	guiDessin.setPosition(-guiDessin.getWidth(), 0);
+	guiModel3D.setPosition(screenWidth - guiModel3D.getWidth(), 0);
+}
+
+void Renderer::boutonImporterImagePressed() {
+	if (is2D) {
+
+	}
+	else {
+
+	}
+
 
 }
 
-void Renderer::boutonImporter() {
-
-}
-
-void Renderer::boutonExporter() {
+void Renderer::boutonExporterImagePressed() {
+	
 
 }
 

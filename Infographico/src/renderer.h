@@ -10,13 +10,14 @@ public:
 	float screenWidth;
 	float screenHeight;
 	
+	bool is2D;
 	
 	//*******************************************//
 	//********************GUI********************//
 	//*******************************************//
 
 	//menu general
-	ofxPanel menu;
+	ofxPanel guiMenu;
 	ofxLabel titreMenu;
 	ofxButton boutonMode2D;
 	ofxButton boutonMode3D;
@@ -27,7 +28,7 @@ public:
 
 
 	//interface dessin
-	ofxPanel dessin;
+	ofxPanel guiDessin;
 	ofxLabel titreDessin;
 
 	ofxIntSlider sliderPosX;
@@ -51,6 +52,25 @@ public:
 	ofxIntSlider sliderEpaisseurLigneContour;
 
 	ofxLabel labelCouleur;
+
+
+	//interface pour modèle 3D
+	ofxPanel guiModel3D;
+
+	ofxLabel labelRotation3D;
+	ofxIntSlider sliderRotation3DX;
+	ofxIntSlider sliderRotation3DY;
+	ofxIntSlider sliderRotation3DZ;
+
+	ofxLabel labelGenerationPrimitiveGeometrique;
+	ofxButton boutonPyramide;
+	ofxButton boutonCube;
+
+	ofxLabel labelGenerationModel3D;
+	ofxButton boutonDragon;
+	ofxButton boutonAngelLucy;
+	ofxToggle animer;
+
 
 
 	
