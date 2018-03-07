@@ -11,18 +11,22 @@ void Renderer::setup() {
 	//Valeur par défaut
 	mouse_press_x = mouse_press_y = mouse_current_x = mouse_current_y = 0.0f;
 	is_mouse_button_pressed = false;
+    is_mouse_button_legit = false;
 	current_color = ofColor(255, 0, 0);
-	current_thickness = 12.0f;
+	current_thickness = 3.0f;
 	model2D = Model2D();
     draw_tool = DrawTool::primitive;
 	draw_primitive = DrawPrimitive::line;
+    is_background_image_loaded = false;
+    is_menu_displayed = true;
 
 	//Ajout des écouteurs de l'interface
-	boutonEllipse.addListener(this, &Renderer::boutonEllipsePressed);
+	boutonCercle.addListener(this, &Renderer::boutonCerclePressed);
 	boutonRectangle.addListener(this, &Renderer::boutonRectanglePressed);
 	boutonTriangle.addListener(this, &Renderer::boutonTrianglePressed);
 	boutonTriangleRectangle.addListener(this, &Renderer::boutonTriangleRectanglePressed);
 	boutonLigne.addListener(this, &Renderer::boutonLignePressed);
+    boutonSelection.addListener(this, &Renderer::boutonSelectionPressed);
 
 	boutonMode2D.addListener(this, &Renderer::boutonMode2DPressed);
 	boutonMode3D.addListener(this, &Renderer::boutonMode3DPressed);
@@ -68,8 +72,11 @@ void Renderer::setup() {
 	guiDessin.add(boutonLigne.setup("Ligne"));
 	guiDessin.add(boutonRectangle.setup("Rectangle"));
 	guiDessin.add(boutonTriangle.setup("Triangle"));
-	guiDessin.add(boutonEllipse.setup("Cercle"));
+	guiDessin.add(boutonCercle.setup("Cercle"));
 	guiDessin.add(boutonTriangleRectangle.setup("Triangle rectangle"));
+    guiDessin.add(boutonSelection.setup("Selection objet"));
+
+
 
 	guiDessin.add(labelPropriteteDuDessin.setup("Propriete du dessin", ""));
 	guiDessin.add(sliderEpaisseurLigneContour.setup("Epaisseur contour", 1, 1, 50));
@@ -100,22 +107,30 @@ void Renderer::setup() {
 	ofxButton boutonCube;
 	ofxButton boutonDragon;
 	ofxButton boutonAngelLucy;
-	
+
+    ofAddListener(ofEvents().mouseReleased, this, &Renderer::mouseReleased, OF_EVENT_ORDER_BEFORE_APP - 100);
+
 }
 
 void Renderer::draw() {
     ofClear(255, 255, 255);
-	guiMenu.draw();
-	guiDessin.draw();
-	guiModel3D.draw();
+    if (is_background_image_loaded) {
+        ofSetColor(255, 255, 255);
+        background_image.draw(0.0f, 0.0f, background_image.getWidth(), background_image.getHeight());
+        ofSetColor(current_color);
+    }
     model2D.draw();
-	if (is_mouse_button_pressed && draw_tool == DrawTool::primitive) {
+    if (is_menu_displayed) {
+        guiMenu.draw();
+        guiDessin.draw();
+        guiModel3D.draw();
+    }
+	if (is_mouse_button_pressed && is_mouse_button_legit && draw_tool == DrawTool::primitive) {
 		preview_form();
 	}
 }
 
 void Renderer::update() {
-
 }
 
 void Renderer::preview_form() {
@@ -140,6 +155,13 @@ void Renderer::preview_form() {
             Circle circle = Circle(current_color, mouse_press_x, mouse_press_y,
                                    mouse_current_x, mouse_current_y, current_thickness);
             circle.draw();
+            break;
+        }
+
+        case DrawPrimitive::triangleRect: {
+            TriangleRect triangle = TriangleRect(current_color, mouse_press_x, mouse_press_y,
+                                                 mouse_current_x, mouse_current_y, current_thickness);
+            triangle.draw();
             break;
         }
 	}
@@ -167,11 +189,38 @@ void Renderer::addForm() {
             model2D.addPrimitive(circle);
             break;
         }
+
+        case DrawPrimitive::triangleRect: {
+            TriangleRect triangle = TriangleRect(current_color, mouse_press_x, mouse_press_y,
+                                   mouse_current_x, mouse_current_y, current_thickness);
+            model2D.addPrimitive(triangle);
+            break;
+        }
     }
 }
 
+void Renderer::selectObject() {
+    if (model2D.findPrimitive(mouse_current_x, mouse_current_y)) {
+        ofLog() << "< object found at (" << mouse_current_x << ", " << mouse_current_y << ")>";
+    } else {
+        ofLog() << "< object not found at (" << mouse_current_x << ", " << mouse_current_y << ")>";
+    }
+}
+
+void Renderer::load_image(const std::string path) {
+    try {
+        background_image.load(path);
+        is_background_image_loaded = true;
+        ofLog() << "< the file has been loaded>";
+    } catch (runtime_error& e) {
+        ofLog() << "< file not found>";
+        is_background_image_loaded = false;
+    }
+
+}
+
 void Renderer::image_export(const string name, const string extension) const {
-	ofImage image;
+	ofImage exp_image;
 
 	// extraire des données temporelles formatées
 	string time_stamp = ofGetTimestampString("-%y%m%d-%H%M%S-%i");
@@ -180,10 +229,10 @@ void Renderer::image_export(const string name, const string extension) const {
 	string file_name = name + time_stamp + "." + extension;
 
 	// capturer le contenu du framebuffer actif
-	image.grabScreen(0, 0, ofGetWindowWidth(), ofGetWindowHeight());
+	exp_image.grabScreen(0, 0, ofGetWindowWidth(), ofGetWindowHeight());
 
 	// sauvegarder le fichier image
-	image.save(file_name);
+	exp_image.save(file_name);
 
 	ofLog() << "<export image: " << file_name << ">";
 }
@@ -193,22 +242,35 @@ void Renderer::image_export(const string name, const string extension) const {
 //*******************************************//
 
 void Renderer::boutonLignePressed() {
-
+    draw_tool = DrawTool::primitive;
+    draw_primitive = DrawPrimitive::line;
+    ofLog() << "< drawing line enabled>";
 }
 
-void Renderer::boutonEllipsePressed() {
-
+void Renderer::boutonCerclePressed() {
+    draw_tool = DrawTool::primitive;
+    draw_primitive = DrawPrimitive::circle;
+    ofLog() << "< drawing circle enabled>";
 }
 
 void Renderer::boutonRectanglePressed() {
-
+    draw_tool = DrawTool::primitive;
+    draw_primitive = DrawPrimitive::rectangle;
+    ofLog() << "< drawing rectangle enabled>";
 }
 void Renderer::boutonTrianglePressed() {
 
 }
 
 void Renderer::boutonTriangleRectanglePressed() {
+    draw_tool = DrawTool::primitive;
+    draw_primitive = DrawPrimitive::triangleRect;
+    ofLog() << "< drawing rectangular triangle enabled>";
+}
 
+void Renderer::boutonSelectionPressed() {
+    draw_tool = DrawTool::select;
+    ofLog() << "< selection mode enabled>";
 }
 
 void Renderer::boutonMode2DPressed() {
@@ -226,18 +288,26 @@ void Renderer::boutonMode3DPressed() {
 
 void Renderer::boutonImporterImagePressed() {
 	if (is2D) {
-
+        ofFileDialogResult result = ofSystemLoadDialog("Load file");
+        if(result.bSuccess) {
+            string path = result.getPath();
+            load_image(path);
+        }
 	}
 	else {
 
 	}
-
-
 }
 
 void Renderer::boutonExporterImagePressed() {
-	
-
+    ofFileDialogResult result = ofSystemSaveDialog("default.jpg", "Save");
+    if(result.bSuccess) {
+        string path = result.getPath();
+        is_menu_displayed = false;
+        draw();
+        image_export(path, "png");
+        is_menu_displayed = true;
+    }
 }
 
 void Renderer::boutonUndoPressed() {
@@ -246,5 +316,10 @@ void Renderer::boutonUndoPressed() {
 
 void Renderer::boutonRedoPressed() {
 
+}
+
+void Renderer::mouseReleased(ofMouseEventArgs & mouse) {
+    ofLog() << "< Mouse released at (" << mouse.x << ", " << mouse.y << ")>";
+    is_mouse_button_legit = false;
 }
 

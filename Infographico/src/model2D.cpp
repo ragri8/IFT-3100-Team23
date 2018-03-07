@@ -10,6 +10,14 @@ list<Primitive*>::iterator Model2D::getCurrent() const {
     return current_itr;
 }
 
+void Model2D::setName(std::string reqName) {
+    name = reqName;
+}
+
+std::string Model2D::getName() const {
+    return name;
+}
+
 void Model2D::draw() const {
     for (auto iter = primitives.rbegin(); iter != primitives.rend(); iter++) {
         (*iter)->draw();

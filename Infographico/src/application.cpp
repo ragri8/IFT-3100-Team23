@@ -33,6 +33,10 @@ void Application::keyReleased(int key){
 void Application::mouseMoved(int x, int y ){
     renderer.mouse_current_x = x;
     renderer.mouse_current_y = y;
+
+	if (!renderer.is_mouse_button_legit) {
+		renderer.is_mouse_button_pressed = false;
+	}
 }
 
 //--------------------------------------------------------------
@@ -44,6 +48,7 @@ void Application::mouseDragged(int x, int y, int button){
 //--------------------------------------------------------------
 void Application::mousePressed(int x, int y, int button){
 	renderer.is_mouse_button_pressed = true;
+	renderer.is_mouse_button_legit = true;
 
 	renderer.mouse_current_x = x;
 	renderer.mouse_current_y = y;
@@ -55,26 +60,36 @@ void Application::mousePressed(int x, int y, int button){
 
 //--------------------------------------------------------------
 void Application::mouseReleased(int x, int y, int button){
-	renderer.is_mouse_button_pressed = false;
-
-    if (renderer.draw_tool == DrawTool::primitive) {
-        renderer.addForm();
-    }
 
 	renderer.mouse_current_x = x;
 	renderer.mouse_current_y = y;
 
-	ofLog() << "<Mouse released at (" << x << ", " << y << ")>";
+	if (renderer.is_mouse_button_pressed) {
+		renderer.is_mouse_button_pressed = false;
+		switch (renderer.draw_tool) {
+			case DrawTool::primitive: {
+				renderer.addForm();
+				break;
+			}
+
+			case DrawTool::select: {
+				renderer.selectObject();
+				break;
+			}
+		}
+	}
 }
 
 //--------------------------------------------------------------
-void Application::mouseEntered(int x, int y){
-
+void Application::mouseEntered(int x, int y) {
+	renderer.is_mouse_button_pressed = false;
+	ofLog() << "<Mouse entered at (" << x << ", " << y << ")>";
 }
 
 //--------------------------------------------------------------
-void Application::mouseExited(int x, int y){
-
+void Application::mouseExited(int x, int y) {
+	renderer.is_mouse_button_pressed = false;
+	ofLog() << "<Mouse exited at (" << x << ", " << y << ")>";
 }
 
 //--------------------------------------------------------------

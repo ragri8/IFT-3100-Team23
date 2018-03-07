@@ -13,6 +13,8 @@ class Model2D {
 public:
     Model2D();
     list<Primitive*>::iterator getCurrent() const;
+    void setName(std::string reqName);
+    std::string getName() const;
     void draw() const;
     void addPrimitive(const Primitive& reqPrimitive);
     list<Primitive*>::iterator insertPrimitive(const list<Primitive*>::iterator& iter, const Primitive& reqPrimitive);
@@ -22,6 +24,7 @@ public:
 
 
 private:
+    std::string name="project";
     list<Primitive*> primitives;
     list<Primitive*>::iterator current_itr;
 };
