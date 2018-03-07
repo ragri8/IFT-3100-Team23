@@ -8,7 +8,16 @@ void Renderer::setup() {
 
 	is2D = true;
 
-	//Ajout des Ècouteurs de l'interface
+	//Valeur par d√©faut
+	mouse_press_x = mouse_press_y = mouse_current_x = mouse_current_y = 0.0f;
+	is_mouse_button_pressed = false;
+	current_color = ofColor(255, 0, 0);
+	current_thickness = 12.0f;
+	model2D = Model2D();
+    draw_tool = DrawTool::primitive;
+	draw_primitive = DrawPrimitive::line;
+
+	//Ajout des √©couteurs de l'interface
 	boutonEllipse.addListener(this, &Renderer::boutonEllipsePressed);
 	boutonRectangle.addListener(this, &Renderer::boutonRectanglePressed);
 	boutonTriangle.addListener(this, &Renderer::boutonTrianglePressed);
@@ -69,7 +78,7 @@ void Renderer::setup() {
 	guiDessin.setPosition(screenWidth - guiDessin.getWidth(), 0);
 
 
-	//interface pour modËle 3D
+	//interface pour mod√®le 3D
 	guiModel3D.setup();
 	
 	guiModel3D.add(labelRotation3D.setup("Rotation 3D", ""));
@@ -95,22 +104,79 @@ void Renderer::setup() {
 }
 
 void Renderer::draw() {
+    ofClear(255, 255, 255);
 	guiMenu.draw();
 	guiDessin.draw();
 	guiModel3D.draw();
+    model2D.draw();
+	if (is_mouse_button_pressed && draw_tool == DrawTool::primitive) {
+		preview_form();
+	}
 }
 
 void Renderer::update() {
 
 }
 
+void Renderer::preview_form() {
+    float x_clamp = min(max(0.0f, mouse_current_x), (float) ofGetWidth());
+    float y_clamp = min(max(0.0f, mouse_current_y), (float) ofGetHeight());
+	switch (draw_primitive) {
+        case DrawPrimitive::line: {
+            Line line = Line(current_color, mouse_press_x, mouse_press_y,
+                             x_clamp, y_clamp, current_thickness);
+            line.draw();
+            break;
+        }
+
+        case DrawPrimitive::rectangle: {
+            Rectangle rectangle = Rectangle(current_color, mouse_press_x, mouse_press_y,
+                                            mouse_current_x, mouse_current_y, current_thickness);
+            rectangle.draw();
+            break;
+        }
+
+        case DrawPrimitive::circle: {
+            Circle circle = Circle(current_color, mouse_press_x, mouse_press_y,
+                                   mouse_current_x, mouse_current_y, current_thickness);
+            circle.draw();
+            break;
+        }
+	}
+}
+
+void Renderer::addForm() {
+    switch (draw_primitive) {
+        case DrawPrimitive::line: {
+            Line line = Line(current_color, mouse_press_x, mouse_press_y,
+                             mouse_current_x, mouse_current_y, current_thickness);
+            model2D.addPrimitive(line);
+            break;
+        }
+
+        case DrawPrimitive::rectangle: {
+            Rectangle rectangle = Rectangle(current_color, mouse_press_x, mouse_press_y,
+                                            mouse_current_x, mouse_current_y, current_thickness);
+            model2D.addPrimitive(rectangle);
+            break;
+        }
+
+        case DrawPrimitive::circle: {
+            Circle circle = Circle(current_color, mouse_press_x, mouse_press_y,
+                                   mouse_current_x, mouse_current_y, current_thickness);
+            model2D.addPrimitive(circle);
+            break;
+        }
+    }
+}
+
 void Renderer::image_export(const string name, const string extension) const {
 	ofImage image;
 
-	// extraire des donnÈes temporelles formatÈes
+	// extraire des donn√©es temporelles format√©es
 	string time_stamp = ofGetTimestampString("-%y%m%d-%H%M%S-%i");
 
-	// gÈnÈrer un nom de fichier unique et ordonnÈ
+	// g√©n√©rer un nom de fichier unique et ordonn√©
 	string file_name = name + time_stamp + "." + extension;
 
 	// capturer le contenu du framebuffer actif

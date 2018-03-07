@@ -2,13 +2,32 @@
 
 #include "ofMain.h"
 #include "ofxGui.h"
+#include "model2D.h"
+#include "primitives/line.h"
+#include "primitives/rectangle.h"
+#include "primitives/circle.h"
+
+enum class DrawTool {select, primitive};
+enum class DrawPrimitive {line, circle, rectangle};
 
 class Renderer
 {
 public:
-	
+
 	float screenWidth;
 	float screenHeight;
+
+	float mouse_press_x;
+	float mouse_press_y;
+	float mouse_current_x;
+	float mouse_current_y;
+	bool is_mouse_button_pressed;
+	ofColor current_color;
+	float current_thickness;
+	DrawTool draw_tool;
+    DrawPrimitive draw_primitive;
+
+	Model2D model2D;
 	
 	bool is2D;
 	
@@ -54,7 +73,7 @@ public:
 	ofxLabel labelCouleur;
 
 
-	//interface pour modèle 3D
+	//interface pour modÃ¨le 3D
 	ofxPanel guiModel3D;
 
 	ofxLabel labelRotation3D;
@@ -92,6 +111,9 @@ public:
 	void setup();
 	void draw();
 	void update();
+
+	void preview_form();
+    void addForm();
 
 	void image_export(const std::string name, const std::string extension) const;
 
