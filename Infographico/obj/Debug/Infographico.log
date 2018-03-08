@@ -1,17 +1,1 @@
-﻿  main.cpp
-  ofApp.cpp
-  Unknown compiler version - please run the configure tests and report the results
-  Unknown compiler version - please run the configure tests and report the results
-     Création de la bibliothèque bin\Infographico_debug.lib et de l'objet bin\Infographico_debug.exp
-  Infographico.vcxproj -> C:\Users\Etienne\Documents\Visual Studio 2017\of_v0.9.8_vs_release\apps\IFT-3100-Team23\Infographico\bin\Infographico_debug.exe
-  
-  	                   9	C:\Users\Etienne\Documents\Visual Studio 2017\of_v0.9.8_vs_release\export\vs\Win32\
-  	  Nouveau fichier		 2939392	C:\Users\Etienne\Documents\Visual Studio 2017\of_v0.9.8_vs_release\export\vs\Win32\assimp.dll
-  	  Nouveau fichier		 1266176	C:\Users\Etienne\Documents\Visual Studio 2017\of_v0.9.8_vs_release\export\vs\Win32\fmodex.dll
-  	  Nouveau fichier		 1312768	C:\Users\Etienne\Documents\Visual Studio 2017\of_v0.9.8_vs_release\export\vs\Win32\fmodexL.dll
-  	  Nouveau fichier		 5647872	C:\Users\Etienne\Documents\Visual Studio 2017\of_v0.9.8_vs_release\export\vs\Win32\FreeImage.dll
-  	  Nouveau fichier		  580608	C:\Users\Etienne\Documents\Visual Studio 2017\of_v0.9.8_vs_release\export\vs\Win32\freetype.dll
-  	  Nouveau fichier		  237568	C:\Users\Etienne\Documents\Visual Studio 2017\of_v0.9.8_vs_release\export\vs\Win32\glut32.dll
-  	  Nouveau fichier		 1178624	C:\Users\Etienne\Documents\Visual Studio 2017\of_v0.9.8_vs_release\export\vs\Win32\libeay32.dll
-  	  Nouveau fichier		  269824	C:\Users\Etienne\Documents\Visual Studio 2017\of_v0.9.8_vs_release\export\vs\Win32\ssleay32.dll
-  	  Nouveau fichier		   69632	C:\Users\Etienne\Documents\Visual Studio 2017\of_v0.9.8_vs_release\export\vs\Win32\Zlib.dll
+﻿C:\Users\Etienne\Documents\Visual Studio 2017\of_v0.9.8_vs_release\apps\IFT-3100-Team23\Infographico\Infographico.vcxproj : error MSB4025: Impossible de charger le fichier projet. Le fichier 'C:\Users\Etienne\Documents\Visual Studio 2017\of_v0.9.8_vs_release\apps\IFT-3100-Team23\Infographico\Infographico.vcxproj' est introuvable.

@@ -2,6 +2,7 @@
 
 #include "ofMain.h"
 #include "ofxGui.h"
+#include "ofxAssimpModelLoader.h"
 
 class Renderer
 {
@@ -11,6 +12,40 @@ public:
 	float screenHeight;
 	
 	bool is2D;
+
+	//Curseur
+	int mousePressX;
+	int mousePressY;
+
+	int mousePosX;
+	int mousePosY;
+
+	bool isMouseButtonPressed;
+
+	//Geometrie
+	bool isGenererTetraedre;
+	bool isGenererOctaedre;
+
+	//Modele 3D
+	bool isGenererModele3D;
+	ofxAssimpModelLoader modele;
+	ofLight light;
+
+	bool isActiveTranslation3D;
+	bool isActiveRotationX3D;
+	bool isActiveRotationY3D;
+	bool isActiveRotationZ3D;
+	bool isActiveProportion3D;
+
+	//Color picker
+	ofColor currentColor;
+	ofxPanel color_picker_gui;
+	ofxToggle rgbMode;
+	ofParameter<float> redOrHue;
+	ofParameter<float> greenOrSaturation;
+	ofParameter<float> blueOrBrightness;
+	ofParameter<float> alpha;
+
 	
 	//*******************************************//
 	//********************GUI********************//
@@ -58,18 +93,23 @@ public:
 	ofxPanel guiModel3D;
 
 	ofxLabel labelRotation3D;
-	ofxIntSlider sliderRotation3DX;
-	ofxIntSlider sliderRotation3DY;
-	ofxIntSlider sliderRotation3DZ;
+	ofxFloatSlider sliderRotation3DX;
+	ofxFloatSlider sliderRotation3DY;
+	ofxFloatSlider sliderRotation3DZ;
+	ofxLabel labelProportion3D;
+	ofxFloatSlider sliderProportion3DX;
+	ofxFloatSlider sliderProportion3DY;
+	ofxFloatSlider sliderProportion3DZ;
 
 	ofxLabel labelGenerationPrimitiveGeometrique;
-	ofxButton boutonPyramide;
-	ofxButton boutonCube;
+	ofxButton boutonOctaedre;
+	ofxButton boutonTetraedre;
 
 	ofxLabel labelGenerationModel3D;
+	ofxButton boutonLapin;
 	ofxButton boutonDragon;
-	ofxButton boutonAngelLucy;
 	ofxToggle animer;
+	ofxToggle dessierBoite;
 
 
 
@@ -87,6 +127,12 @@ public:
 	void boutonUndoPressed();
 	void boutonRedoPressed();
 
+	void boutonTetraedrePressed();
+	void boutonOctaedrePressed();
+	void boutonLapinPressed();
+	void boutonDragonPressed();
+
+
 
 
 	void setup();
@@ -95,6 +141,22 @@ public:
 
 	void image_export(const std::string name, const std::string extension) const;
 
+	//Curseur
+	void dessinerCurseur(float x, float y) const;
+	void dessinerCurseurEtoile(float x, float y) const;
+	void dessinerCurseurTriforce(float x, float y) const;
+	void dessinerCurseurPoint(float x, float y) const;
+	void dessinerCurseurVise(float x, float y) const;
+	void dessinerCurseurFleche(float x, float y) const;
+	void dessinerCurseurPeace(float x, float y) const;
 
+
+	//Geometrie
+	void genererModele3D();
+	void genererTetraedre();
+	void genererOctaedre();
+
+	//Color picker
+	void rgbModeSwitched(bool &rgbMode);
 
 };
