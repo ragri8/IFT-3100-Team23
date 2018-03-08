@@ -7,6 +7,7 @@
 #include "primitives/rectangle.h"
 #include "primitives/circle.h"
 #include "primitives/triangleRect.h"
+#include "historic.h"
 
 enum class DrawTool {select, primitive};
 enum class DrawPrimitive {line, circle, rectangle, triangleRect};
@@ -25,11 +26,14 @@ public:
     bool is_mouse_button_legit;
 	ofColor current_color;
 	float current_thickness;
+	Primitive* preview_primitive;
 	DrawTool draw_tool;
     DrawPrimitive draw_primitive;
 
 	Model2D model2D;
+    History history;
     ofImage background_image;
+    bool is_ctrl_pressed;
     bool is_background_image_loaded;
     bool is_menu_displayed;
 	
@@ -119,13 +123,20 @@ public:
 	void draw();
 	void update();
 
+	void create_preview();
 	void preview_form();
     void addForm();
     void selectObject();
+
+    void saveModif(list<Primitive*>::iterator iter, Action action);
+    void undo();
+    void redo();
 
 	void load_image(const std::string path);
     void image_export(const std::string name, const std::string extension) const;
 
     void mouseReleased(ofMouseEventArgs & mouse);
+
+    ~Renderer();
 
 };

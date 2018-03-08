@@ -14,8 +14,10 @@ public:
            const float& reqY2, const float& reqThickness, const bool& filled=true);
 
     void draw() const final;
+    void reshape(const float& reqX1, const float& reqY1, const float& reqX2, const float& reqY2) final;
     bool isSelected(const float& reqX, const float& reqY) const final;
     Primitive* clone() const final;
+    ~Circle();
 
 
 private:

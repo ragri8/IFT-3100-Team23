@@ -11,3 +11,6 @@ Primitive::Primitive(const ofColor& reqColor) :
 void Primitive::draw() const {}
 
 Primitive::~Primitive() {}
+
+
+int Primitive::primitive_nbr = 0;

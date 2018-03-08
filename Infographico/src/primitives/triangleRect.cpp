@@ -8,7 +8,8 @@ TriangleRect::TriangleRect(const ofColor& reqColor, const float& reqX1, const fl
                     const float& reqY2, const float& reqThickness, const bool& filled):
         Primitive(reqColor), x1(reqX1), y1(reqY1), x2(reqX1), y2(reqY2), x3(reqX2), y3(reqY1),
         thickness(reqThickness), is_filled(filled) {
-
+    primitive_nbr++;
+    ofLog() << "<New primitive: (" << primitive_nbr << ") >";
 }
 
 void TriangleRect::draw() const {
@@ -20,6 +21,15 @@ void TriangleRect::draw() const {
     ofSetColor(color);
     ofSetLineWidth(thickness);
     ofDrawTriangle(x1, y1, x2, y2, x3, y3);
+}
+
+void TriangleRect::reshape(const float& reqX1, const float& reqY1, const float& reqX2, const float& reqY2) {
+    x1 = reqX1;
+    y1 = reqY1;
+    x2 = reqX1;
+    y2 = reqY2;
+    x3 = reqX2;
+    y3 = reqY1;
 }
 
 bool TriangleRect::isSelected(const float& reqX, const float& reqY) const {
@@ -47,5 +57,12 @@ bool TriangleRect::isSelected(const float& reqX, const float& reqY) const {
 }
 
 Primitive* TriangleRect::clone() const {
+    primitive_nbr++;
+    ofLog() << "<New primitive: (" << primitive_nbr << ") >";
     return new TriangleRect(*this);
+}
+
+TriangleRect::~TriangleRect() {
+    primitive_nbr--;
+    ofLog() << "<Deletion of primitive: (" << primitive_nbr << ") >";
 }

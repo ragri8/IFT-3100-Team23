@@ -12,21 +12,25 @@
 class Model2D {
 public:
     Model2D();
-    list<Primitive*>::iterator getCurrent() const;
+
+    unsigned int getCurrentIndex() const;
     void setName(std::string reqName);
     std::string getName() const;
     void draw() const;
     void addPrimitive(const Primitive& reqPrimitive);
-    list<Primitive*>::iterator insertPrimitive(const list<Primitive*>::iterator& iter, const Primitive& reqPrimitive);
+    vector<Primitive*>::iterator last();
+    unsigned int lastIndex() const;
+    vector<Primitive*>::iterator insertPrimitive(const vector<Primitive*>::iterator& iter, const Primitive& reqPrimitive);
+    vector<Primitive*>* getPrimitives();
     bool findPrimitive(const float reqX, const float reqY);
-    void deletePrimitive(const list<Primitive*>::iterator& iter);
+    void deletePrimitive(const vector<Primitive*>::iterator& iter);
     virtual ~Model2D();
 
 
 private:
     std::string name="project";
-    list<Primitive*> primitives;
-    list<Primitive*>::iterator current_itr;
+    vector<Primitive*> v_primitives;
+    unsigned int current_index;
 };
 
 

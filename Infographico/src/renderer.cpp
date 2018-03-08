@@ -12,9 +12,11 @@ void Renderer::setup() {
 	mouse_press_x = mouse_press_y = mouse_current_x = mouse_current_y = 0.0f;
 	is_mouse_button_pressed = false;
     is_mouse_button_legit = false;
+    is_ctrl_pressed = false;
 	current_color = ofColor(255, 0, 0);
 	current_thickness = 3.0f;
 	model2D = Model2D();
+    history = History();
     draw_tool = DrawTool::primitive;
 	draw_primitive = DrawPrimitive::line;
     is_background_image_loaded = false;
@@ -133,70 +135,51 @@ void Renderer::draw() {
 void Renderer::update() {
 }
 
-void Renderer::preview_form() {
+void Renderer::create_preview() {
     float x_clamp = min(max(0.0f, mouse_current_x), (float) ofGetWidth());
     float y_clamp = min(max(0.0f, mouse_current_y), (float) ofGetHeight());
-	switch (draw_primitive) {
+    switch (draw_primitive) {
         case DrawPrimitive::line: {
             Line line = Line(current_color, mouse_press_x, mouse_press_y,
                              x_clamp, y_clamp, current_thickness);
-            line.draw();
+            preview_primitive = line.clone();
             break;
         }
 
         case DrawPrimitive::rectangle: {
             Rectangle rectangle = Rectangle(current_color, mouse_press_x, mouse_press_y,
                                             mouse_current_x, mouse_current_y, current_thickness);
-            rectangle.draw();
+            preview_primitive = rectangle.clone();
             break;
         }
 
         case DrawPrimitive::circle: {
             Circle circle = Circle(current_color, mouse_press_x, mouse_press_y,
                                    mouse_current_x, mouse_current_y, current_thickness);
-            circle.draw();
+            preview_primitive = circle.clone();;
             break;
         }
 
         case DrawPrimitive::triangleRect: {
             TriangleRect triangle = TriangleRect(current_color, mouse_press_x, mouse_press_y,
                                                  mouse_current_x, mouse_current_y, current_thickness);
-            triangle.draw();
-            break;
-        }
-	}
-}
-
-void Renderer::addForm() {
-    switch (draw_primitive) {
-        case DrawPrimitive::line: {
-            Line line = Line(current_color, mouse_press_x, mouse_press_y,
-                             mouse_current_x, mouse_current_y, current_thickness);
-            model2D.addPrimitive(line);
-            break;
-        }
-
-        case DrawPrimitive::rectangle: {
-            Rectangle rectangle = Rectangle(current_color, mouse_press_x, mouse_press_y,
-                                            mouse_current_x, mouse_current_y, current_thickness);
-            model2D.addPrimitive(rectangle);
-            break;
-        }
-
-        case DrawPrimitive::circle: {
-            Circle circle = Circle(current_color, mouse_press_x, mouse_press_y,
-                                   mouse_current_x, mouse_current_y, current_thickness);
-            model2D.addPrimitive(circle);
-            break;
-        }
-
-        case DrawPrimitive::triangleRect: {
-            TriangleRect triangle = TriangleRect(current_color, mouse_press_x, mouse_press_y,
-                                   mouse_current_x, mouse_current_y, current_thickness);
-            model2D.addPrimitive(triangle);
+            preview_primitive = triangle.clone();
             break;
         }
     }
+}
+
+void Renderer::preview_form() {
+    float x_clamp = min(max(0.0f, mouse_current_x), (float) ofGetWidth());
+    float y_clamp = min(max(0.0f, mouse_current_y), (float) ofGetHeight());
+	preview_primitive->reshape(mouse_press_x, mouse_press_y, x_clamp, y_clamp);
+    preview_primitive->draw();
+}
+
+void Renderer::addForm() {
+    model2D.addPrimitive(*preview_primitive);
+    history.addChange(model2D.lastIndex(), Action::add, preview_primitive);
+    delete preview_primitive;
 }
 
 void Renderer::selectObject() {
@@ -205,6 +188,18 @@ void Renderer::selectObject() {
     } else {
         ofLog() << "< object not found at (" << mouse_current_x << ", " << mouse_current_y << ")>";
     }
+}
+
+void Renderer::saveModif(list<Primitive*>::iterator iter, Action action) {
+
+}
+
+void Renderer::undo() {
+    history.undo(model2D.getPrimitives());
+}
+
+void Renderer::redo() {
+    history.redo(model2D.getPrimitives());
 }
 
 void Renderer::load_image(const std::string path) {
@@ -216,7 +211,6 @@ void Renderer::load_image(const std::string path) {
         ofLog() << "< file not found>";
         is_background_image_loaded = false;
     }
-
 }
 
 void Renderer::image_export(const string name, const string extension) const {
@@ -311,7 +305,7 @@ void Renderer::boutonExporterImagePressed() {
 }
 
 void Renderer::boutonUndoPressed() {
-
+    undo();
 }
 
 void Renderer::boutonRedoPressed() {
@@ -323,3 +317,6 @@ void Renderer::mouseReleased(ofMouseEventArgs & mouse) {
     is_mouse_button_legit = false;
 }
 
+Renderer::~Renderer() {
+
+}

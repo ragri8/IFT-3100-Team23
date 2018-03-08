@@ -11,6 +11,8 @@ Line::Line(const ofColor& reqColor, const float& reqX1, const float& reqY1, cons
         swap(x1, x2);
         swap(y1, y2);
     }
+    primitive_nbr++;
+    ofLog() << "<New primitive: (" << primitive_nbr << ") >";
 }
 
 void Line::draw() const {
@@ -21,6 +23,20 @@ void Line::draw() const {
     //ofLog() << "< draw line>";
     //ofDrawCircle(x1, y1, thickness/2);
     //ofDrawCircle(x2, y2, thickness/2);
+}
+
+void Line::reshape(const float& reqX1, const float& reqY1, const float& reqX2, const float& reqY2) {
+    if (reqX1  < reqX2) {
+        x1 = reqX1;
+        x2 = reqX2;
+        y1 = reqY1;
+        y2 = reqY2;
+    } else {
+        x1 = reqX2;
+        x2 = reqX1;
+        y1 = reqY2;
+        y2 = reqY1;
+    }
 }
 
 bool Line::isSelected(const float& reqX, const float& reqY) const {
@@ -49,5 +65,12 @@ bool Line::isSelected(const float& reqX, const float& reqY) const {
 }
 
 Primitive* Line::clone() const {
+    primitive_nbr++;
+    ofLog() << "<New primitive: (" << primitive_nbr << ") >";
     return new Line(*this);
+}
+
+Line::~Line() {
+    primitive_nbr--;
+    ofLog() << "<Deletion of primitive: (" << primitive_nbr << ") >";
 }

@@ -17,12 +17,36 @@ void Application::draw(){
 
 //--------------------------------------------------------------
 void Application::keyPressed(int key){
+    switch (key) {
+        case 768: //768 and 769 is ctrl button
+            renderer.is_ctrl_pressed = true;
+            break;
+
+        default:
+            break;
+    }
 
 }
 
 //--------------------------------------------------------------
 void Application::keyReleased(int key){
 	switch (key) {
+        case 122: // z button
+            if (renderer.is_ctrl_pressed) {
+                renderer.undo();
+            }
+            break;
+
+        case 121: // y button
+            if (renderer.is_ctrl_pressed) {
+                renderer.redo();
+            }
+            break;
+
+        case 768:
+            renderer.is_ctrl_pressed = false;
+            break;
+
 		default:
 			ofLog() << "<key released: " << key << ">"; // Useful for fast key recognition
 			break;
@@ -55,6 +79,9 @@ void Application::mousePressed(int x, int y, int button){
 
 	renderer.mouse_press_x = x;
 	renderer.mouse_press_y = y;
+	if (renderer.draw_tool == DrawTool::primitive) {
+		renderer.create_preview();
+	}
 	ofLog() << "<Mouse pressed at (" << x << ", " << y << ")>";
 }
 
@@ -67,15 +94,13 @@ void Application::mouseReleased(int x, int y, int button){
 	if (renderer.is_mouse_button_pressed) {
 		renderer.is_mouse_button_pressed = false;
 		switch (renderer.draw_tool) {
-			case DrawTool::primitive: {
+			case DrawTool::primitive:
 				renderer.addForm();
 				break;
-			}
 
-			case DrawTool::select: {
+			case DrawTool::select:
 				renderer.selectObject();
 				break;
-			}
 		}
 	}
 }

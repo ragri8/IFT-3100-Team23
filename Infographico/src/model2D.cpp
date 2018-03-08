@@ -4,10 +4,12 @@
 
 #include "model2D.h"
 
-Model2D::Model2D() {}
+Model2D::Model2D() {
+    current_index = 0;
+}
 
-list<Primitive*>::iterator Model2D::getCurrent() const {
-    return current_itr;
+unsigned int Model2D::getCurrentIndex() const {
+    return current_index;
 }
 
 void Model2D::setName(std::string reqName) {
@@ -19,24 +21,36 @@ std::string Model2D::getName() const {
 }
 
 void Model2D::draw() const {
-    for (auto iter = primitives.rbegin(); iter != primitives.rend(); iter++) {
+    for (auto iter = v_primitives.rbegin(); iter != v_primitives.rend(); iter++) {
         (*iter)->draw();
     }
 }
 
 void Model2D::addPrimitive(const Primitive& reqPrimitive) {
-    primitives.push_back(reqPrimitive.clone());
+    v_primitives.push_back(reqPrimitive.clone());
 }
 
-list<Primitive*>::iterator Model2D::insertPrimitive(const list<Primitive*>::iterator& iter, const Primitive& reqPrimitive) {
-    return primitives.insert(iter, reqPrimitive.clone());
+vector<Primitive*>::iterator Model2D::last() {
+    return (v_primitives.end())--;
+}
+
+unsigned int Model2D::lastIndex() const {
+    return (unsigned int)v_primitives.size()-1;
+}
+
+vector<Primitive*>::iterator Model2D::insertPrimitive(const vector<Primitive*>::iterator& iter, const Primitive& reqPrimitive) {
+    return v_primitives.insert(iter, reqPrimitive.clone());
+}
+
+vector<Primitive*>* Model2D::getPrimitives() {
+    return &v_primitives;
 }
 
 bool Model2D::findPrimitive(const float reqX, const float reqY) {
     bool isFound = false;
-    for (list<Primitive*>::reverse_iterator riter = primitives.rbegin(); riter != primitives.rend(); ++riter) {
-        if ((*riter)->isSelected(reqX, reqY)) {
-            current_itr = (riter++).base();
+    for (unsigned int i = v_primitives.size(); i != 0; i++) {
+        if (v_primitives[i-1]->isSelected(reqX, reqY)) {
+            current_index = i-1;
             isFound = true;
             break;
         }
@@ -44,13 +58,13 @@ bool Model2D::findPrimitive(const float reqX, const float reqY) {
     return isFound;
 }
 
-void Model2D::deletePrimitive(const list<Primitive*>::iterator& iter) {
-    primitives.erase(iter);
+void Model2D::deletePrimitive(const vector<Primitive*>::iterator& iter) {
+    v_primitives.erase(iter);
 }
 
 Model2D::~Model2D() {
-    for (auto i = primitives.begin(); i != primitives.end(); i++) {
+    for (auto i = v_primitives.begin(); i != v_primitives.end(); i++) {
         delete *i;
     }
-    primitives.clear();
+    v_primitives.clear();
 }
