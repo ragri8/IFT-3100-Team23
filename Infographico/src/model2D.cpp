@@ -48,7 +48,7 @@ vector<Primitive*>* Model2D::getPrimitives() {
 
 bool Model2D::findPrimitive(const float reqX, const float reqY) {
     bool isFound = false;
-    for (unsigned int i = v_primitives.size(); i != 0; i++) {
+    for (unsigned int i = v_primitives.size(); i != 0; i--) {
         if (v_primitives[i-1]->isSelected(reqX, reqY)) {
             current_index = i-1;
             isFound = true;

@@ -6,7 +6,11 @@
 class Application : public ofBaseApp {
 public:
 
-	
+	float time_current;
+	float time_last;
+	float time_elapsed;
+
+	Renderer renderer;
 
 
 	void setup();
@@ -27,6 +31,6 @@ public:
 	void exit();
 
 private: 
-	Renderer renderer;
+	//Renderer renderer;
 		
 };
