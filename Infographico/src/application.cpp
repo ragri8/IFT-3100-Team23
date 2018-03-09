@@ -34,6 +34,14 @@ void Application::keyPressed(int key){
 //--------------------------------------------------------------
 void Application::keyReleased(int key){
 	switch (key) {
+		case 8: // backspace
+			renderer.deleteSelection();
+			break;
+
+		case 127: // delete, same as backspace
+			renderer.deleteSelection();
+			break;
+
         case 122: // z button
             if (renderer.is_ctrl_pressed) {
                 renderer.undo();
@@ -91,6 +99,7 @@ void Application::mousePressed(int x, int y, int button){
 
 //--------------------------------------------------------------
 void Application::mouseReleased(int x, int y, int button){
+    renderer.releaseSelection();
 
 	renderer.mouse_current_x = x;
 	renderer.mouse_current_y = y;

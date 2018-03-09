@@ -30,6 +30,12 @@ void History::undo(vector<Primitive*>* reqVector) {
                 break;
 
             case Action::modify:
+                backup_tuple = make_tuple(rest_index, Action::modify, (*reqVector)[rest_index]->clone());
+                restored_states.push(backup_tuple);
+                delete *(reqVector->begin() + rest_index);
+                reqVector->erase(reqVector->begin() + rest_index);
+                reqVector->insert(reqVector->begin() + rest_index, rest_primitive->clone());
+                delete rest_primitive;
                 break;
         }
         previous_states.pop();
@@ -60,6 +66,12 @@ void History::redo(vector<Primitive*>* reqVector) {
                 break;
 
             case Action::modify:
+                backup_tuple = make_tuple(rest_index, Action::modify, (*reqVector)[rest_index]->clone());
+                previous_states.push(backup_tuple);
+                delete *(reqVector->begin() + rest_index);
+                reqVector->erase(reqVector->begin() + rest_index);
+                reqVector->insert(reqVector->begin() + rest_index, rest_primitive->clone());
+                delete rest_primitive;
                 break;
         }
         restored_states.pop();
