@@ -10,11 +10,6 @@ void Renderer::setup() {
     is2D = true;
 
 	//Curseur Etienne
-	mousePressX = 0;
-	mousePressY = 0;
-	mousePosX = 0;
-	mousePosY = 0;
-	isMouseButtonPressed= false;
 
     //Curseur Raph
     mouse_press_x = mouse_press_y = mouse_current_x = mouse_current_y = 0.0f;
@@ -22,7 +17,7 @@ void Renderer::setup() {
     is_mouse_button_legit = false;
 
     is_ctrl_pressed = false;
-    current_color = ofColor(255, 0, 0);
+    currentColor = ofColor(255, 0, 0);
     current_thickness = 3.0f;
     model2D = Model2D();
     history = History();
@@ -224,7 +219,7 @@ void Renderer::draw() {
 
     //Color picker
     if (rgbMode){
-        current_color = ofColor(redOrHue, greenOrSaturation, blueOrBrightness, alpha);
+        currentColor = ofColor(redOrHue, greenOrSaturation, blueOrBrightness, alpha);
     }
 	else {
 		currentColor = ofColor::fromHsb(redOrHue, greenOrSaturation, blueOrBrightness, alpha);
@@ -292,7 +287,7 @@ void Renderer::draw() {
 		ofSetColor(0, 0, 0);
 		ofDrawRectangle(0, colorPickerGUI.getPosition().y + colorPickerGUI.getHeight(), colorPickerGUI.getWidth(), 20);
 		ofFill();
-        ofSetColor(current_color);
+        ofSetColor(currentColor);
 
 		// definir position de l'interface graphique de composition de texture
 		if (imageComposition) {
@@ -343,25 +338,25 @@ void Renderer::create_preview() {
     float y_clamp = min(max(0.0f, mouse_current_y), (float) ofGetHeight());
     switch (draw_primitive) {
         case DrawPrimitive::line: {
-            Line line = Line(current_color, mouse_press_x, mouse_press_y,
+            Line line = Line(currentColor, mouse_press_x, mouse_press_y,
                              x_clamp, y_clamp, current_thickness);
             preview_primitive = line.clone();
             break;
         }
         case DrawPrimitive::rectangle: {
-            Rectangle rectangle = Rectangle(current_color, mouse_press_x, mouse_press_y,
+            Rectangle rectangle = Rectangle(currentColor, mouse_press_x, mouse_press_y,
                                             mouse_current_x, mouse_current_y, current_thickness);
             preview_primitive = rectangle.clone();
             break;
         }
         case DrawPrimitive::circle: {
-            Circle circle = Circle(current_color, mouse_press_x, mouse_press_y,
+            Circle circle = Circle(currentColor, mouse_press_x, mouse_press_y,
                                    mouse_current_x, mouse_current_y, current_thickness);
             preview_primitive = circle.clone();;
             break;
         }
         case DrawPrimitive::triangleRect: {
-            TriangleRect triangle = TriangleRect(current_color, mouse_press_x, mouse_press_y,
+            TriangleRect triangle = TriangleRect(currentColor, mouse_press_x, mouse_press_y,
                                                  mouse_current_x, mouse_current_y, current_thickness);
             preview_primitive = triangle.clone();
             break;
@@ -1218,7 +1213,7 @@ void Renderer::filter()
 				sum[c] = 0;
 
 			// déterminer l'index du pixel de l'image de destination
-			pixel_index_img_dst = (currentImage.getWidth() * y + x) * color_component_count;
+			pixel_index_img_dst = (int)(currentImage.getWidth() * y + x) * color_component_count;
 
 			// itération sur les colonnes du kernel de convolution
 			for (j = -kernel_offset; j <= kernel_offset; ++j)
@@ -1227,7 +1222,7 @@ void Renderer::filter()
 				for (i = -kernel_offset; i <= kernel_offset; ++i)
 				{
 					// déterminer l'index du pixel de l'image source à lire
-					pixel_index_img_src = (currentImage.getWidth() * (y - j) + (x - i)) * color_component_count;
+					pixel_index_img_src = (int)(currentImage.getWidth() * (y - j) + (x - i)) * color_component_count;
 					if (pixel_index_img_src < 0 || pixel_index_img_src >= currentImage.getWidth() * currentImage.getHeight() * color_component_count)
 						pixel_color_src = 0;
 					else
@@ -1278,7 +1273,7 @@ void Renderer::filter()
 			for (c = 0; c < color_component_count; ++c)
 			{
 				// conversion vers entier et validation des bornes de l'espace de couleur
-				pixel_color_dst[c] = (int)ofClamp(sum[c], 0, 255);
+				pixel_color_dst[c] = (unsigned char)ofClamp(sum[c], 0, 255);
 			}
 
 			// écrire la couleur à l'index du pixel en cours de filtrage
