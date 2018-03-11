@@ -2,13 +2,21 @@
 
 void Renderer::setup() {
     ofSetFrameRate(60);
+	ofSetBackgroundColor(191);
 
     screenWidth = ofGetWidth();
     screenHeight = ofGetHeight();
 
     is2D = true;
 
-    //Curseur
+	//Curseur Etienne
+	mousePressX = 0;
+	mousePressY = 0;
+	mousePosX = 0;
+	mousePosY = 0;
+	isMouseButtonPressed= false;
+
+    //Curseur Raph
     mouse_press_x = mouse_press_y = mouse_current_x = mouse_current_y = 0.0f;
     is_mouse_button_pressed = false;
     is_mouse_button_legit = false;
@@ -41,8 +49,8 @@ void Renderer::setup() {
     boutonLigne.addListener(this, &Renderer::boutonLignePressed);
     boutonSelection.addListener(this, &Renderer::boutonSelectionPressed);
 
-    boutonMode2D.addListener(this, &Renderer::boutonMode2DPressed);
-    boutonMode3D.addListener(this, &Renderer::boutonMode3DPressed);
+    boutonMode2D.addListener(this, &Renderer::boutonMode2DToggled);
+	boutonMode3D.addListener(this, &Renderer::boutonMode3DToggled);
     boutonImporterImage.addListener(this, &Renderer::boutonImporterImagePressed);
     boutonExporterImage.addListener(this, &Renderer::boutonExporterImagePressed);
     boutonUndo.addListener(this, &Renderer::boutonUndoPressed);
@@ -53,25 +61,31 @@ void Renderer::setup() {
     boutonLapin.addListener(this, &Renderer::boutonLapinPressed);
     boutonDragon.addListener(this, &Renderer::boutonDragonPressed);
 
-
-
+	imageComposition.addListener(this, &Renderer::compositionToggled);
+	convolutionFilter.addListener(this, &Renderer::convolutionToggled);
+	proceduralTexture.addListener(this, &Renderer::proceduralToggled);
+	
 
     //menu
-    guiMenu.setup();
-    guiMenu.add(titreMenu.setup("Menu", "2D"));
-    guiMenu.add(boutonMode2D.setup("Mode 2D"));
-    guiMenu.add(boutonMode3D.setup("Mode 3D"));
-    guiMenu.add(boutonImporterImage.setup("Importer image"));
-    guiMenu.add(boutonExporterImage.setup("Exporter image"));
-    guiMenu.add(boutonUndo.setup("<-Undo"));
-    guiMenu.add(boutonRedo.setup("Redo->"));
+	guiMenu.setup();
+	guiMenu.setName("Menu");
+	guiMenu.add(boutonMode2D.set("Mode 2D", true));
+	guiMenu.add(boutonMode3D.set("Mode 3D", false));
+	guiMenu.add(boutonImporterImage.setup("Importer image"));
+	guiMenu.add(labelSourceImage.set("None"));
+	guiMenu.add(toggleAfficherImage.set("Afficher image", false));
+	guiMenu.add(boutonExporterImage.setup("Exporter image"));
+	guiMenu.add(labelTraitementImage.setup("Traitement d'image", ""));
+	guiMenu.add(imageComposition.set("Composition", false));
+	guiMenu.add(convolutionFilter.set("Filtre de convolution", false));
+	guiMenu.add(proceduralTexture.set("Texture Procedurale", false));
 
     guiMenu.setPosition(0, 0);
 
 
     //Interface dessin
     guiDessin.setup();
-    guiDessin.add(titreDessin.setup("Dessin", ""));
+    guiDessin.setName("Dessin 2D");
     guiDessin.add(sliderPosX.setup("Position en X", screenWidth / 2, 0, screenWidth));
     guiDessin.add(sliderPosY.setup("Position en Y", screenHeight / 2, 0, screenHeight));
     guiDessin.add(sliderRotation.setup("Rotation", 0, 0, 360));
@@ -97,42 +111,109 @@ void Renderer::setup() {
     guiDessin.add(labelPropriteteDuDessin.setup("Propriete du dessin", ""));
     guiDessin.add(sliderEpaisseurLigneContour.setup("Epaisseur contour", 1, 1, 50));
 
-    guiDessin.add(labelCouleur.setup("Couleur", ""));
+    guiDessin.add(boutonUndo.setup("<-Undo"));
+	guiDessin.add(boutonRedo.setup("Redo->"));
+
     guiDessin.setPosition(screenWidth - guiDessin.getWidth(), 0);
 
 
-    //interface pour mod�le 3D
-    guiModel3D.setup();
+    //interface pour modèle 3D
+	guiModel3D.setup();
+	guiModel3D.setName("Dessin 3D");
 
-    guiModel3D.add(labelRotation3D.setup("Rotation 3D", ""));
-    guiModel3D.add(sliderRotation3DX.setup("Rotation X", 1, 1, 360));
-    guiModel3D.add(sliderRotation3DY.setup("Rotation Y", 1, 1, 360));
-    guiModel3D.add(sliderRotation3DZ.setup("Rotation Z", 1, 1, 360));
+	guiModel3D.add(labelGenerationModel3D.setup("Modele 3D", ""));
+	guiModel3D.add(boutonLapin.setup("Generer Lapin"));
+	guiModel3D.add(boutonDragon.setup("Generer Dragon"));
 
-    guiModel3D.add(labelProportion3D.setup("Proportion 3D", ""));
-    guiModel3D.add(sliderProportion3DX.setup("Proportion en X", 1, 0.5, 2));
-    guiModel3D.add(sliderProportion3DY.setup("Proportion en Y", 1, 0.5, 2));
-    guiModel3D.add(sliderProportion3DZ.setup("Proportion en Z", 1, 0.5, 2));
+	guiModel3D.add(labelRotation3D.setup("Rotation Modele 3D", ""));
+	
+	guiModel3D.add(sliderRotation3DX.setup("Rotation X", 0, 0, 360));
+	guiModel3D.add(sliderRotation3DY.setup("Rotation Y", 0, 0, 360));
+	guiModel3D.add(sliderRotation3DZ.setup("Rotation Z", 0, 0, 360));
 
-    guiModel3D.add(labelGenerationPrimitiveGeometrique.setup("Primitive geometrique 3D", ""));
-    guiModel3D.add(boutonTetraedre.setup("Tetraedre"));
-    guiModel3D.add(boutonOctaedre.setup("Octaedre"));
+	guiModel3D.add(labelProportion3D.setup("Proportion modele 3D", ""));
 
-    guiModel3D.add(labelGenerationModel3D.setup("Modele 3D", ""));
-    guiModel3D.add(boutonLapin.setup("Generer Lapin"));
-    guiModel3D.add(boutonDragon.setup("Generer Dragon"));
-    guiModel3D.add(animer.setup("Animer", false));
-    guiModel3D.add(dessierBoite.setup("Dessiner boite", false));
-    guiModel3D.setPosition(-guiModel3D.getWidth(), 0);
+	guiModel3D.add(sliderProportion3DX.setup("Proportion en X", 1, 0.5, 2));
+	guiModel3D.add(sliderProportion3DY.setup("Proportion en Y", 1, 0.5, 2));
+	guiModel3D.add(sliderProportion3DZ.setup("Proportion en Z", 1, 0.5, 2));
+
+	guiModel3D.add(labelEffet.setup("Effets", ""));
+	guiModel3D.add(animer.setup("Animer", false));
+	guiModel3D.add(dessierBoite.setup("Dessiner boite", false));
+
+	//primitive geo
+	guiModel3D.add(labelGenerationPrimitiveGeometrique.setup("Primitive geometrique 3D", ""));
+	guiModel3D.add(boutonTetraedre.setup("Tetraedre"));
+	guiModel3D.add(boutonOctaedre.setup("Octaedre"));
+
+	guiModel3D.add(labelPrimitiveGeo.setup("Rotation Primitive Geo", ""));
+	guiModel3D.add(buttonRotation3DX.setup("Activer rotation en X"));
+	guiModel3D.add(buttonRotation3DY.setup("Activer rotation en Y"));
+	guiModel3D.add(buttonRotation3DZ.setup("Activer rotation en Z"));
+	guiModel3D.add(sliderRotationPrimitiveGeo.setup("Rotation sur X", 0, 0, 360));
+	isRotation3DXPrimitiveGeo = true;
+	isRotation3DYPrimitiveGeo = false;
+	isRotation3DZPrimitiveGeo = false;
+	
+
+	guiModel3D.setPosition(-guiModel3D.getWidth(), 0);
 
     //color picker
-    rgbMode.addListener(this, &Renderer::rgbModeSwitched);
-    color_picker_gui.setup();
-    color_picker_gui.add(rgbMode.setup("RGB mode", true));
-    color_picker_gui.add(redOrHue);
-    color_picker_gui.add(greenOrSaturation);
-    color_picker_gui.add(blueOrBrightness);
-    color_picker_gui.add(alpha.set("alpha", 255, 0, 255));
+	rgbMode.addListener(this, &Renderer::rgbModeSwitched);
+	colorPickerGUI.setup();
+	colorPickerGUI.add(rgbMode.setup("RGB mode", true));
+	colorPickerGUI.add(redOrHue);
+	colorPickerGUI.add(greenOrSaturation);
+	colorPickerGUI.add(blueOrBrightness);
+	colorPickerGUI.add(alpha.set("alpha", 255, 0, 255));
+	
+
+	buttonRotation3DX.addListener(this, &Renderer::buttonRotation3DXPressed);
+	buttonRotation3DY.addListener(this, &Renderer::buttonRotation3DYPressed);
+	buttonRotation3DZ.addListener(this, &Renderer::buttonRotation3DZPressed);
+
+	//animer
+	animationGrossit = true;
+
+	// importer une image située dans ./bin/data
+	currentImage.load("field.jpg");
+
+	// sélectionner le filtre de convolution par défaut
+	kernel_type = ConvolutionKernel::identity;
+	kernel_name = "identity";
+
+	// initialisation de l'interface graphique de composition de texture
+	boutonImporterTexture1.addListener(this, &Renderer::boutonImporterImageTexture1);
+	boutonImporterTexture2.addListener(this, &Renderer::boutonImporterImageTexture2);
+	textureCompositionGUI.setup();
+	textureCompositionGUI.setName("TEXTURE COMPOSITION");
+	textureCompositionGUI.add(boutonImporterTexture1.setup("Import texture 1"));
+	textureCompositionGUI.add(textureName1.set("None"));
+	textureCompositionGUI.add(boutonImporterTexture2.setup("Import texture 2"));
+	textureCompositionGUI.add(textureName2.set("None"));
+	textureCompositionGUI.add(compositionAdd.set("Composition: ADD", false));
+
+	// initialisation de l'interface graphique pour filtrage par convolution
+	aiguiser.addListener(this, &Renderer::aiguiserToggled);
+	detectionBordure.addListener(this, &Renderer::detectionBordureToggled);
+	bosseler.addListener(this, &Renderer::bosselerToggled);
+	flou.addListener(this, &Renderer::flouToggled);
+	filtrageConvolutionGUI.setup();
+	filtrageConvolutionGUI.setName("CONVOLUTION FILTER");
+	filtrageConvolutionGUI.add(aiguiser.set("Sharpen", false));
+	filtrageConvolutionGUI.add(detectionBordure.set("Edge Detection", false));
+	filtrageConvolutionGUI.add(bosseler.set("Emboss", false));
+	filtrageConvolutionGUI.add(flou.set("Blur", false));
+
+	// initialisation de l'interface graphique pour texture procédural
+	binaryTree.addListener(this, &Renderer::binaryTreeToggled);
+	ternaryTree.addListener(this, &Renderer::ternaryTreeToggled);
+	textureProceduralGUI.setup();
+	textureProceduralGUI.setName("PROCEDURAL TEXTURE");
+	textureProceduralGUI.add(binaryTree.set("Binary Tree", false));
+	textureProceduralGUI.add(ternaryTree.set("Ternary Tree", false));
+	textureProceduralGUI.add(branchLength.set("branch length", 100, 100, 300));
+	textureProceduralGUI.add(angle.set("branch angle", 30, 0, 360));
 
     ofAddListener(ofEvents().mouseReleased, this, &Renderer::mouseReleased, OF_EVENT_ORDER_BEFORE_APP - 100);
 
@@ -140,20 +221,59 @@ void Renderer::setup() {
 
 void Renderer::draw() {
     ofClear(255, 255, 255);
+
     //Color picker
     if (rgbMode){
         current_color = ofColor(redOrHue, greenOrSaturation, blueOrBrightness, alpha);
     }
-    if (is_background_image_loaded) {
-        ofSetColor(255, 255, 255);
-        background_image.draw(0.0f, 0.0f, background_image.getWidth(), background_image.getHeight());
-        ofSetColor(current_color);
-    }
+	else {
+		currentColor = ofColor::fromHsb(redOrHue, greenOrSaturation, blueOrBrightness, alpha);
+	}
+    
     model2D.draw();
     if (is_menu_displayed) {
+
+		if (compositionAdd && is_texture1_loaded && is_texture2_loaded) {
+		//if (texture1.getWidth() > 0 && texture1.getHeight() > 0 && texture2.getWidth() > 0 && texture2.getHeight() > 0)
+		//	ofSetWindowShape(max(texture1.getWidth(), texture2.getWidth()), max(texture1.getHeight(), texture2.getHeight()));
+		//ofEnableBlendMode(OF_BLENDMODE_ADD);
+		texture1.draw(guiMenu.getWidth(), 0, texture1.getWidth(), texture1.getHeight());
+		ofSetColor(255, 255, 255, 150);
+		texture2.draw(guiMenu.getWidth(), 0, texture2.getWidth(), texture2.getHeight());
+		ofSetColor(255, 255, 255, 255);
+		//ofDisableBlendMode();
+		}
+		else if (aiguiser || detectionBordure || bosseler || flou) {
+			filteredImage.allocate(currentImage.getWidth(), currentImage.getHeight(), OF_IMAGE_COLOR);
+			filter();
+			filteredImage.draw(guiMenu.getWidth(), 0, currentImage.getWidth(), currentImage.getHeight());
+		}
+		else if (ternaryTree || binaryTree) {
+			ofSetBackgroundColor(255, 255, 255, 255);
+			ofSetColor(0, 0, 0, 255);
+			ofSetLineWidth(2);
+	
+			if (ternaryTree) {
+				ofPushMatrix();
+				ofTranslate(ofGetWidth() / 2, ofGetHeight() / 2);
+				drawTernaryTree(branchLength);
+				ofPopMatrix();
+			}
+			else if (binaryTree) {
+				ofPushMatrix();
+				ofTranslate(ofGetWidth() / 2, ofGetHeight() / 2);
+				drawBinaryTree(branchLength);
+				ofPopMatrix();
+			}
+		}
+		else if(toggleAfficherImage) {
+			currentImage.draw(guiMenu.getWidth(), 0, currentImage.getWidth(), currentImage.getHeight());
+		}
+
         //GUI et affichage
         guiMenu.setPosition(0, 0);
         guiMenu.draw();
+		
         if (!is2D) {
             guiModel3D.setPosition(screenWidth - guiDessin.getWidth(), 0);
             guiModel3D.draw();
@@ -161,34 +281,62 @@ void Renderer::draw() {
             guiDessin.setPosition(screenWidth - guiDessin.getWidth(), 0);
             guiDessin.draw();
         }
+
         // dessiner le color picker
-        color_picker_gui.setPosition(0, guiMenu.getHeight());
-        color_picker_gui.draw();
+		colorPickerGUI.setPosition(0, guiMenu.getHeight());
+		colorPickerGUI.draw();
+		ofSetColor(currentColor);
+		ofDrawRectangle(0, colorPickerGUI.getPosition().y + colorPickerGUI.getHeight(), colorPickerGUI.getWidth(), 20);
+		ofNoFill();
+		ofSetLineWidth(5);
+		ofSetColor(0, 0, 0);
+		ofDrawRectangle(0, colorPickerGUI.getPosition().y + colorPickerGUI.getHeight(), colorPickerGUI.getWidth(), 20);
+		ofFill();
         ofSetColor(current_color);
-        ofDrawRectangle(0, color_picker_gui.getPosition().y + color_picker_gui.getHeight(), color_picker_gui.getWidth(), 20);
-        ofNoFill();
-        ofSetLineWidth(5);
-        ofSetColor(0, 0, 0);
-        ofDrawRectangle(0, color_picker_gui.getPosition().y + color_picker_gui.getHeight(), color_picker_gui.getWidth(), 20);
-        ofFill();
-        ofSetColor(current_color);
+
+		// definir position de l'interface graphique de composition de texture
+		if (imageComposition) {
+			textureCompositionGUI.setPosition(0, colorPickerGUI.getPosition().y + colorPickerGUI.getHeight() + 20);
+			textureCompositionGUI.draw();
+		}
+		// definir position de l'interface graphique de filtrage par convolution
+		if (convolutionFilter) {
+			filtrageConvolutionGUI.setPosition(0, colorPickerGUI.getPosition().y + colorPickerGUI.getHeight() + 20);
+			filtrageConvolutionGUI.draw();
+		}
+		// definir position de l'interface graphique de texture procédural
+		if (proceduralTexture) {
+			textureProceduralGUI.setPosition(0, colorPickerGUI.getPosition().y + colorPickerGUI.getHeight() + 20);
+			textureProceduralGUI.draw();
+		}
     }
+
     if (!is2D) {
         if (isGenererModele3D) {
             genererModele3D();
+			if (dessierBoite) {
+				genererBoite();
+			}
         } else if (isGenererTetraedre) {
             genererTetraedre();
         } else if (isGenererOctaedre) {
             genererOctaedre();
         }
     }
+
     if (is_mouse_button_pressed && is_mouse_button_legit && draw_tool == DrawTool::primitive && is_preview) {
         preview_form();
     }
     dessinerCurseur(mouse_current_x, mouse_current_y);
 }
 
-void Renderer::update() {}
+void Renderer::update() {
+	if (isGenererModele3D) {
+		if (animer) {
+			animerMaillage();
+		}
+	}
+}
 
 void Renderer::create_preview() {
     float x_clamp = min(max(0.0f, mouse_current_x), (float) ofGetWidth());
@@ -252,17 +400,6 @@ void Renderer::redo() {
     history.redo(model2D.getPrimitives());
 }
 
-void Renderer::load_image(const std::string path) {
-    try {
-        background_image.load(path);
-        is_background_image_loaded = true;
-        ofLog() << "< the file has been loaded>";
-    } catch (runtime_error& e) {
-        ofLog() << "< file not found>";
-        is_background_image_loaded = false;
-    }
-}
-
 void Renderer::image_export(const string name, const string extension) const {
     ofImage exp_image;
 
@@ -317,29 +454,32 @@ void Renderer::boutonSelectionPressed() {
 }
 
 //Change l'interface de modele 3D pour l'interface de dessin 2D
-void Renderer::boutonMode2DPressed() {
-    is2D = true;
-    titreMenu.setup("Menu", "2D");
-    guiDessin.setPosition(screenWidth - guiDessin.getWidth(), 0);
-    guiModel3D.setPosition(-guiModel3D.getWidth(), 0);
+void Renderer::boutonMode2DToggled(bool &mode2D) {
+	if (mode2D) {
+		is2D = true;
+		guiDessin.setPosition(screenWidth - guiDessin.getWidth(), 0);
+		guiModel3D.setPosition(-guiModel3D.getWidth(), 0);
+		boutonMode3D.set(false);
+	}
 }
 
 //Change l'interface de dessin pour l'interface de modele 3D
-void Renderer::boutonMode3DPressed() {
-    is2D = false;
-    titreMenu.setup("Menu", "3D");
-    guiDessin.setPosition(-guiDessin.getWidth(), 0);
-    guiModel3D.setPosition(screenWidth - guiModel3D.getWidth(), 0);
+void Renderer::boutonMode3DToggled(bool &mode3D) {
+	if (mode3D) {
+		is2D = false;
+		guiDessin.setPosition(-guiDessin.getWidth(), 0);
+		guiModel3D.setPosition(screenWidth - guiModel3D.getWidth(), 0);
+		boutonMode2D.set(false);
+	}
 }
 
 void Renderer::boutonImporterImagePressed() {
-    if (is2D) {
-        ofFileDialogResult result = ofSystemLoadDialog("Load file");
-        if(result.bSuccess) {
-            string path = result.getPath();
-            load_image(path);
-        }
-    } else {}
+	ofFileDialogResult result = ofSystemLoadDialog("Load file");
+	if (result.bSuccess) {
+		string path = result.getPath();
+		load_image(path, currentImage, is_current_image_loaded);
+		is_current_image_loaded ? labelSourceImage.set(result.getName()) : labelSourceImage.set("None");
+	}
 }
 
 void Renderer::boutonExporterImagePressed() {
@@ -380,18 +520,22 @@ void Renderer::boutonOctaedrePressed() {
 
 //Si on appuie sur le bouton lapin, le modele 3D devient le lapin
 void Renderer::boutonLapinPressed() {
-    isGenererOctaedre = false;
-    isGenererTetraedre = false;
-    modele.loadModel("lapin.obj");
-    isGenererModele3D = true;
+	isGenererOctaedre = false;
+	isGenererTetraedre = false;
+	modele.loadModel("lapin.obj");
+	isGenererLapin = true;
+	isGenererDragon = false;
+	isGenererModele3D = true;
 }
 
 //Si on appuie sur le bouton dragon, le modele 3D devient le dragon
 void Renderer::boutonDragonPressed(){
-    isGenererOctaedre = false;
-    isGenererTetraedre = false;
-    modele.loadModel("dragon.obj");
-    isGenererModele3D = true;
+	isGenererOctaedre = false;
+	isGenererTetraedre = false;
+	modele.loadModel("dragon.obj");
+	isGenererDragon = true;
+	isGenererLapin = false;
+	isGenererModele3D = true;
 }
 
 
@@ -403,14 +547,22 @@ void Renderer::boutonDragonPressed(){
 
 //Determine quel curseur utiliser
 void Renderer::dessinerCurseur(float x, float y) const {
-    ofSetLineWidth(2);
+	ofSetLineWidth(2);
 
-    if (is2D) {
-        dessinerCurseurTriforce(x, y);
-    }
-    else {
-        dessinerCurseurEtoile(x, y);
-    }
+	if (is2D) {
+		dessinerCurseurTriforce(x, y);
+	}
+	else if(!is2D){
+		if (isGenererModele3D) {
+			dessinerCurseurVise(x, y);
+		}
+		else if (isGenererTetraedre || isGenererOctaedre) {
+			dessinerCurseurPoint(x, y);
+		}
+		else {
+			dessinerCurseurEtoile(x, y);
+		}
+	}	
 }
 
 //Curseur Etoile
@@ -542,62 +694,698 @@ void Renderer::genererModele3D() {
 
 //genere un tetraedre
 void Renderer::genererTetraedre() {
-    ofFill();
-    ofSetColor(current_color);
-    float taille = screenHeight/4;
-    float origineX = screenWidth / 2;
-    float origineY = screenHeight*0.6;
-    float origineZ = 0;
-    //rotation en x
-    float rotation3DXenYSommetDessus = sin(ofDegToRad(sliderRotation3DX))*taille;
-    float rotation3DXenZSommetDessus = cos(ofDegToRad(sliderRotation3DX))*taille;
-    float rotation3DXenY = sin(ofDegToRad(sliderRotation3DX))*(taille / 2);
-    float rotation3DXenZ = cos(ofDegToRad(sliderRotation3DX))*(taille / 2);
-    //rotation en y
-    float rotation3DYenX = sin(ofDegToRad(sliderRotation3DY))*(taille / 2);
-    float rotation3DYenZ = cos(ofDegToRad(sliderRotation3DY))*(taille / 2);
+	ofFill();
+	ofSetColor(currentColor);
+	float taille = screenHeight/4;
+	float origineX = screenWidth / 2;
+	float origineY = screenHeight/2;
+	float origineZ = 0;
+	
 
-    float rayon = 0.375*taille;
+	//origine
+	ofVec3f origineTetraedre = ofVec3f(origineX, origineY, origineZ);
+	/****************************/
+	/***generation des points****/
+	/***x' = x cos f - y sin f***/
+	/***y' = y cos f + x sin f***/
+	/****************************/
+
+	//sommet du haut
+	ofVec3f sommet1 = ofVec3f(0, -(taille*0.75) / 2, 0);
+
+	//rotation x
+	if (isRotation3DXPrimitiveGeo) {
+		sommet1 = ofVec3f(0,
+			-((taille*0.75) / 2)*cos(ofDegToRad(sliderRotationPrimitiveGeo)),
+			-((taille*0.75) / 2)*sin(ofDegToRad(sliderRotationPrimitiveGeo)));
+	}
+
+	//rotation z
+	else if (isRotation3DZPrimitiveGeo) {
+		sommet1 = ofVec3f(((taille*0.75) / 2)*sin(ofDegToRad(sliderRotationPrimitiveGeo)),
+			((-(taille*0.75) / 2)*cos(ofDegToRad(sliderRotationPrimitiveGeo))), 0);
+	}
+	//ajoute l'origine
+	sommet1 += origineTetraedre;
+
+	//sommet de derriere
+	ofVec3f sommet2 = ofVec3f(0, (taille*0.75) / 2, -(taille / (2* (sqrt(0.75)))));
+
+	//rotation x
+	if (isRotation3DXPrimitiveGeo) {
+		sommet2 = ofVec3f(0,
+			((taille*0.75) / 2)*cos(ofDegToRad(sliderRotationPrimitiveGeo)) + (-(taille / (2 * (sqrt(0.75)))))*sin(ofDegToRad(sliderRotationPrimitiveGeo)),
+			-(taille / (2 * (sqrt(0.75))))*cos(ofDegToRad(sliderRotationPrimitiveGeo)) - ((taille*0.75) / 2)*sin(ofDegToRad(sliderRotationPrimitiveGeo)));
+	}
+
+	//rotation y
+	else if (isRotation3DYPrimitiveGeo) {
+		sommet2 = ofVec3f((taille / (2 * (sqrt(0.75))))*sin(ofDegToRad(sliderRotationPrimitiveGeo)), (taille*0.75) / 2, -(taille / (2 * (sqrt(0.75))))*cos(ofDegToRad(sliderRotationPrimitiveGeo)));
+	}
+
+	//rotation z
+	else if (isRotation3DZPrimitiveGeo) {
+		sommet2 = ofVec3f(-((taille*0.75) / 2)*sin(ofDegToRad(sliderRotationPrimitiveGeo)), ((taille*0.75) / 2)*cos(ofDegToRad(sliderRotationPrimitiveGeo)), -(taille / (2 * (sqrt(0.75)))));
+
+	}
+
+	//ajoute l'origine
+	sommet2 += origineTetraedre;
 
 
-    //sommet du dessus
-    ofVec3f sommet1 = ofVec3f(origineX, origineY-((0.75*taille)+ rotation3DXenYSommetDessus)*(1/sliderProportion3DY), origineZ+ rotation3DXenZSommetDessus);
-    //sommet derriere
-    ofVec3f sommet2 = ofVec3f(origineX+ rotation3DYenX, origineY - (rotation3DXenY)*sliderProportion3DY, origineZ-((0.375*taille)+rotation3DXenZ+ rotation3DYenZ)*(1 / sliderProportion3DZ));
-    //sommet avant droit
-    ofVec3f sommet3 = ofVec3f(origineX+((taille/2)-rotation3DYenX)*sliderProportion3DX, origineY+(rotation3DXenY) * sliderProportion3DY, origineZ + ((0.375*taille)-rotation3DXenZ+ rotation3DYenZ)*sliderProportion3DZ);
-    //sommet avant gauche
-    ofVec3f sommet4 = ofVec3f(origineX-((taille/2)+rotation3DYenX)*(sliderProportion3DX), origineY + (rotation3DXenY * sliderProportion3DY), origineZ + ((0.375*taille) - rotation3DXenZ+ rotation3DYenZ)*sliderProportion3DZ);
-    ofDrawTriangle(sommet1, sommet2, sommet3);
-    ofDrawTriangle(sommet1, sommet2, sommet4);
-    ofDrawTriangle(sommet1, sommet3, sommet4);
-    ofDrawTriangle(sommet2, sommet3, sommet4);
+	//sommet avant gauche
+	ofVec3f sommet3 = ofVec3f(-(taille/2), (taille*0.75)/2, (taille / 4* sqrt(0.75)));
 
-    //dessin des aretes
-    ofSetColor(255, 255, 255);
-    ofDrawLine(sommet1, sommet2);
-    ofDrawLine(sommet1, sommet3);
-    ofDrawLine(sommet1, sommet4);
-    ofDrawLine(sommet2, sommet3);
-    ofDrawLine(sommet2, sommet4);
-    ofDrawLine(sommet3, sommet4);
+	//rotation x
+	if (isRotation3DXPrimitiveGeo) {
+		sommet3 = ofVec3f(-(taille / 2),
+			(((taille*0.75) / 2)*cos(ofDegToRad(sliderRotationPrimitiveGeo)) + (taille / 4 * sqrt(0.75))*sin(ofDegToRad(sliderRotationPrimitiveGeo))),
+			((taille / 4 * sqrt(0.75))*cos(ofDegToRad(sliderRotationPrimitiveGeo)) - ((taille*0.75) / 2)*sin(ofDegToRad(sliderRotationPrimitiveGeo))));
+	}
+	
+	//rotation y
+	else if (isRotation3DYPrimitiveGeo) {
+		sommet3 = ofVec3f(-(taille / 2)*cos(ofDegToRad(sliderRotationPrimitiveGeo)) - (taille / 4 * sqrt(0.75))*sin(ofDegToRad(sliderRotationPrimitiveGeo)),
+			(taille*0.75) / 2,
+			(taille / 4 * sqrt(0.75))*cos(ofDegToRad(sliderRotationPrimitiveGeo)) + (-(taille / 2)*sin(ofDegToRad(sliderRotationPrimitiveGeo))));
+	}
+	
+	//rotation z
+	else if (isRotation3DZPrimitiveGeo) {
+		sommet3 = ofVec3f(((-(taille / 2))*cos(ofDegToRad(sliderRotationPrimitiveGeo))) - (((taille*0.75) / 2)*sin(ofDegToRad(sliderRotationPrimitiveGeo))),
+			(((taille*0.75) / 2)*cos(ofDegToRad(sliderRotationPrimitiveGeo))) + ((-(taille / 2))*sin(ofDegToRad(sliderRotationPrimitiveGeo))),
+			(taille / 4 * sqrt(0.75)));
+	}
+
+	//ajoute l'origine
+	sommet3 += origineTetraedre;
+
+
+	//sommet avant droit
+	ofVec3f sommet4 = ofVec3f((taille / 2), (taille*0.75) / 2, (taille / 4 * sqrt(0.75)));
+
+	//rotation x
+	if (isRotation3DXPrimitiveGeo) {
+		sommet4 = ofVec3f((taille / 2),
+			(((taille*0.75) / 2)*cos(ofDegToRad(sliderRotationPrimitiveGeo)) + (taille / 4 * sqrt(0.75))*sin(ofDegToRad(sliderRotationPrimitiveGeo))),
+			((taille / 4 * sqrt(0.75))*cos(ofDegToRad(sliderRotationPrimitiveGeo)) - ((taille*0.75) / 2)*sin(ofDegToRad(sliderRotationPrimitiveGeo))));
+	}
+	
+	//rotation y
+	else if (isRotation3DYPrimitiveGeo) {
+		sommet4 = ofVec3f((taille / 2)*cos(ofDegToRad(sliderRotationPrimitiveGeo)) - (taille / 4 * sqrt(0.75))*sin(ofDegToRad(sliderRotationPrimitiveGeo)),
+			(taille*0.75) / 2,
+			(taille / 4 * sqrt(0.75))*cos(ofDegToRad(sliderRotationPrimitiveGeo)) + ((taille / 2)*sin(ofDegToRad(sliderRotationPrimitiveGeo))));
+	}
+	
+	//rotation z
+	else if (isRotation3DZPrimitiveGeo) {
+		sommet4 = ofVec3f((((taille / 2))*cos(ofDegToRad(sliderRotationPrimitiveGeo))) - (((taille*0.75) / 2)*sin(ofDegToRad(sliderRotationPrimitiveGeo))),
+			(((taille*0.75) / 2)*cos(ofDegToRad(sliderRotationPrimitiveGeo))) + (((taille / 2))*sin(ofDegToRad(sliderRotationPrimitiveGeo))),
+			(taille / 4 * sqrt(0.75)));
+	}
+
+	//ajoute l'origine
+	sommet4 += origineTetraedre;
+	
+	//dessin des triangles avec les points
+	ofDrawTriangle(sommet1, sommet2, sommet3);
+	ofDrawTriangle(sommet1, sommet2, sommet4);
+	ofDrawTriangle(sommet1, sommet3, sommet4);
+	ofDrawTriangle(sommet2, sommet3, sommet4);
+
+	//dessin des aretes
+	ofSetColor(255, 255, 255);
+	ofDrawLine(sommet1, sommet2);
+	ofDrawLine(sommet1, sommet3);
+	ofDrawLine(sommet1, sommet4);
+	ofDrawLine(sommet2, sommet3);
+	ofDrawLine(sommet2, sommet4);
+	ofDrawLine(sommet3, sommet4);
 }
 
-void Renderer::genererOctaedre() {}
+
+void Renderer::genererOctaedre() {
+	ofFill();
+	ofSetColor(currentColor);
+	float taille = screenHeight / 4;
+	float origineX = screenWidth / 2;
+	float origineY = screenHeight / 2;
+	float origineZ = 0;
+
+	//origine
+	ofVec3f origineOctaedre = ofVec3f(origineX, origineY, origineZ);
+	/****************************/
+	/***generation des points****/
+	/***x' = x cos f - y sin f***/
+	/***y' = y cos f + x sin f***/
+	/****************************/
+
+	//sommet du haut
+	ofVec3f sommet1 = ofVec3f(0, -(taille*0.75), 0);
+
+	//rotation x
+	if (isRotation3DXPrimitiveGeo) {
+		sommet1 = ofVec3f(0,
+			-((taille*0.75))*cos(ofDegToRad(sliderRotationPrimitiveGeo)),
+			-((taille*0.75))*sin(ofDegToRad(sliderRotationPrimitiveGeo)));
+	}
+
+	//rotation z
+	else if (isRotation3DZPrimitiveGeo) {
+		sommet1 = ofVec3f(((taille*0.75))*sin(ofDegToRad(sliderRotationPrimitiveGeo)),
+			((-(taille*0.75))*cos(ofDegToRad(sliderRotationPrimitiveGeo))), 0);
+	}
+	//ajoute l'origine
+	sommet1 += origineOctaedre;
+
+	//sommet de derriere
+	ofVec3f sommet2 = ofVec3f(0, 0, -(taille) / (2* sqrt(0.75)));
+
+	//rotation x
+	if (isRotation3DXPrimitiveGeo) {
+		sommet2 = ofVec3f(0,
+			(-(taille) / (2 * sqrt(0.75)))*sin(ofDegToRad(sliderRotationPrimitiveGeo)),
+			((taille) / (2 * sqrt(0.75)))*cos(ofDegToRad(sliderRotationPrimitiveGeo)));
+	}
+
+	//rotation y
+	else if (isRotation3DYPrimitiveGeo) {
+		sommet2 = ofVec3f(((taille) / (2 * sqrt(0.75)))*sin(ofDegToRad(sliderRotationPrimitiveGeo)), 0, -((taille) / (2 * sqrt(0.75)))*cos(ofDegToRad(sliderRotationPrimitiveGeo)));
+	}
+
+	//ajoute l'origine
+	sommet2 += origineOctaedre;
+
+
+	//sommet avant gauche
+	ofVec3f sommet3 = ofVec3f(-(taille / 2), 0, (taille) / (4* sqrt(0.75)));
+
+	//rotation x
+	if (isRotation3DXPrimitiveGeo) {
+		sommet3 = ofVec3f(-(taille / 2),
+			(((taille) / (4 * sqrt(0.75)))*sin(ofDegToRad(sliderRotationPrimitiveGeo))),
+			(((taille) / (4 * sqrt(0.75)))*cos(ofDegToRad(sliderRotationPrimitiveGeo))));
+
+	}
+
+	//rotation y
+	else if (isRotation3DYPrimitiveGeo) {
+		sommet3 = ofVec3f(-(taille / 2)*cos(ofDegToRad(sliderRotationPrimitiveGeo)) - ((taille) / (4 * sqrt(0.75)))*sin(ofDegToRad(sliderRotationPrimitiveGeo)),
+			0,
+			((taille) / (4 * sqrt(0.75)))*cos(ofDegToRad(sliderRotationPrimitiveGeo)) + (-(taille / 2)*sin(ofDegToRad(sliderRotationPrimitiveGeo))));
+	}
+
+	//rotation z
+	else if (isRotation3DZPrimitiveGeo) {
+		sommet3 = ofVec3f(((-(taille / 2))*cos(ofDegToRad(sliderRotationPrimitiveGeo))),
+			((-(taille / 2))*sin(ofDegToRad(sliderRotationPrimitiveGeo))),
+			(taille) / (4 * sqrt(0.75)));
+	}
+
+	//ajoute l'origine
+	sommet3 += origineOctaedre;
+
+
+	/***x' = x cos f - y sin f***/
+	/***y' = y cos f + x sin f***/
+
+	//sommet avant droit
+	ofVec3f sommet4 = ofVec3f((taille / 2), 0, (taille) / (4 * sqrt(0.75)));
+
+	//rotation x
+	if (isRotation3DXPrimitiveGeo) {
+		sommet4 = ofVec3f((taille / 2),
+			((taille) / (4 * sqrt(0.75)))*sin(ofDegToRad(sliderRotationPrimitiveGeo))),
+			(((taille) / (4 * sqrt(0.75)))*cos(ofDegToRad(sliderRotationPrimitiveGeo)));
+	}
+
+	//rotation y
+	else if (isRotation3DYPrimitiveGeo) {
+		sommet4 = ofVec3f((taille / 2)*cos(ofDegToRad(sliderRotationPrimitiveGeo)) - ((taille) / (4 * sqrt(0.75)))*sin(ofDegToRad(sliderRotationPrimitiveGeo)),
+			0,
+			((taille) / (4 * sqrt(0.75)))*cos(ofDegToRad(sliderRotationPrimitiveGeo)) + ((taille / 2)*sin(ofDegToRad(sliderRotationPrimitiveGeo))));
+	}
+
+	//rotation z
+	else if (isRotation3DZPrimitiveGeo) {
+		sommet4 = ofVec3f((((taille / 2))*cos(ofDegToRad(sliderRotationPrimitiveGeo))),
+			(((taille / 2))*sin(ofDegToRad(sliderRotationPrimitiveGeo))),
+			(taille) / (4 * sqrt(0.75)));
+	}
+
+	//ajoute l'origine
+	sommet4 += origineOctaedre;
+
+	//sommet du dessous
+	ofVec3f sommet5 = ofVec3f(0, (taille*0.75), 0);
+
+	//rotation x
+	if (isRotation3DXPrimitiveGeo) {
+		sommet5 = ofVec3f(0,
+			((taille*0.75))*cos(ofDegToRad(sliderRotationPrimitiveGeo)),
+			((taille*0.75))*sin(ofDegToRad(sliderRotationPrimitiveGeo)));
+	}
+
+	//rotation z
+	else if (isRotation3DZPrimitiveGeo) {
+		sommet5 = ofVec3f((-(taille*0.75))*sin(ofDegToRad(sliderRotationPrimitiveGeo)),
+			(((taille*0.75))*cos(ofDegToRad(sliderRotationPrimitiveGeo))), 0);
+	}
+	//ajoute l'origine
+	sommet5 += origineOctaedre;
+
+
+	//dessin des triangles avec les points
+	ofDrawTriangle(sommet1, sommet2, sommet3);
+	ofDrawTriangle(sommet1, sommet2, sommet4);
+	ofDrawTriangle(sommet1, sommet3, sommet4);
+	ofDrawTriangle(sommet2, sommet3, sommet4);
+	ofDrawTriangle(sommet5, sommet2, sommet3);
+	ofDrawTriangle(sommet5, sommet2, sommet4);
+	ofDrawTriangle(sommet5, sommet3, sommet4);
+
+	//dessin des aretes
+	ofSetColor(255, 255, 255);
+	ofDrawLine(sommet1, sommet2);
+	ofDrawLine(sommet1, sommet3);
+	ofDrawLine(sommet1, sommet4);
+	ofDrawLine(sommet2, sommet3);
+	ofDrawLine(sommet2, sommet4);
+	ofDrawLine(sommet3, sommet4);
+	ofDrawLine(sommet5, sommet2);
+	ofDrawLine(sommet5, sommet3);
+	ofDrawLine(sommet5, sommet4);
+}
 
 //Color picker
 void Renderer::rgbModeSwitched(bool &rgbMode) {
-    if (rgbMode) {
-        color_picker_gui.setName("RGB Color Picker");
-        redOrHue.set("red", 191, 0, 255);
-        greenOrSaturation.set("green", 191, 0, 255);
-        blueOrBrightness.set("blue", 191, 0, 255);
-    } else {
-        color_picker_gui.setName("HSB Color Picker");
-        redOrHue.set("hue", 0, 0, 360);
-        greenOrSaturation.set("saturation", 100, 0, 100);
-        blueOrBrightness.set("brightness", 100, 0, 100);
-    }
+    if (rgbMode)
+	{
+		colorPickerGUI.setName("RGB Color Picker");
+		redOrHue.set("red", currentColor.r, 0, 255);
+		greenOrSaturation.set("green", currentColor.g, 0, 255);
+		blueOrBrightness.set("blue", currentColor.b, 0, 255);
+	}
+	else
+	{
+		colorPickerGUI.setName("HSB Color Picker");
+		redOrHue.set("hue", currentColor.getHue(), 0, 360);
+		greenOrSaturation.set("saturation", currentColor.getSaturation(), 0, 100);
+		blueOrBrightness.set("brightness", currentColor.getBrightness(), 0, 100);
+	}
+}
+
+//primitive geo
+void Renderer::buttonRotation3DXPressed() {
+	isRotation3DXPrimitiveGeo = true;
+	isRotation3DYPrimitiveGeo = false;
+	isRotation3DZPrimitiveGeo = false;
+	sliderRotationPrimitiveGeo.setName("Rotation sur X");
+}
+void Renderer::buttonRotation3DYPressed() {
+	isRotation3DXPrimitiveGeo = false;
+	isRotation3DYPrimitiveGeo = true;
+	isRotation3DZPrimitiveGeo = false;
+	sliderRotationPrimitiveGeo.setName("Rotation sur Y");
+
+}
+void Renderer::buttonRotation3DZPressed() {
+	isRotation3DXPrimitiveGeo = false;
+	isRotation3DYPrimitiveGeo = false;
+	isRotation3DZPrimitiveGeo = true;
+	sliderRotationPrimitiveGeo.setName("Rotation sur Z");
+
+}
+
+//Generer boite autour des modeles 3D
+void Renderer::genererBoite() {
+
+	ofSetColor(currentColor);
+
+	if (isGenererLapin) {
+		boite = ofBoxPrimitive(500, 700, 350);
+		//On met la boite à la meme position que le modele pour obtenir un rotation symetrique au modele
+		boite.setPosition((screenWidth / 2), screenHeight*0.75, 0);
+		//On suit la meme rotation que le modele
+		boite.rotate(-sliderRotation3DX, 1, 0, 0);
+		boite.rotate(-sliderRotation3DY, 0, 1, 0);
+		boite.rotate(sliderRotation3DZ, 0, 0, 1);
+		boite.setScale(sliderProportion3DX, sliderProportion3DY, sliderProportion3DZ);
+		boite.draw();
+	}
+	else if (isGenererDragon) {
+		boite = ofBoxPrimitive(400, 600, 200);
+		//On met la boite à la meme position que le modele pour obtenir un rotation symetrique au modele
+		boite.setPosition((screenWidth / 2), screenHeight*0.75, 0);
+		//On suit la meme rotation que le modele
+		boite.rotate(-sliderRotation3DX, 1, 0, 0);
+		boite.rotate(-sliderRotation3DY, 0, 1, 0);
+		boite.rotate(sliderRotation3DZ, 0, 0, 1);
+
+		boite.setScale(sliderProportion3DX, sliderProportion3DY, sliderProportion3DZ);
+		boite.draw();
+	}
+	
+}
+
+//animation des modeles 3D
+
+void Renderer::animerMaillage() {
+
+	//On augmente la rotation
+	sliderRotation3DY = sliderRotation3DY + 1.3;
+	if (sliderRotation3DY >= 360) {
+		sliderRotation3DY = 0;
+	}
+
+	if (sliderProportion3DX >= sliderProportion3DX.getMax() || 
+		sliderProportion3DY >= sliderProportion3DY.getMax() || 
+		sliderProportion3DZ >= sliderProportion3DZ.getMax()) {
+		animationGrossit = false;
+	}
+	else if (sliderProportion3DX <= sliderProportion3DX.getMin() || 
+		sliderProportion3DY <= sliderProportion3DY.getMin() || 
+		sliderProportion3DZ <= sliderProportion3DZ.getMin()) {
+		animationGrossit = true;
+	}
+	//On augmente ou on diminue la proportion
+	if (animationGrossit) {
+		sliderProportion3DX = sliderProportion3DX + 0.001;
+		sliderProportion3DY = sliderProportion3DY + 0.001;
+		sliderProportion3DZ = sliderProportion3DZ + 0.001;
+	}
+	else if(animationGrossit==false){
+		sliderProportion3DX = sliderProportion3DX - 0.001;
+		sliderProportion3DY = sliderProportion3DY - 0.001;
+		sliderProportion3DZ = sliderProportion3DZ - 0.001;
+	}
+}
+
+//Composition d'image
+void Renderer::load_image(const std::string path, ofImage &image, bool &imageLoadSuccess) {
+	try {
+		image.load(path);
+		imageLoadSuccess = true;
+		ofLog() << "< the file has been loaded>";
+	}
+	catch (runtime_error& e) {
+		imageLoadSuccess = false;
+		ofLog() << "< file not found>";
+	}
+}
+
+void Renderer::boutonImporterImageTexture1() {
+	ofFileDialogResult result = ofSystemLoadDialog("Load file");
+	if (result.bSuccess) {
+		string path = result.getPath();
+		load_image(path, texture1, is_texture1_loaded);
+		is_texture1_loaded ? textureName1.set(result.getName()) : textureName1.set("None");
+	}
+}
+
+void Renderer::boutonImporterImageTexture2() {
+	ofFileDialogResult result = ofSystemLoadDialog("Load file");
+	if (result.bSuccess) {
+		string path = result.getPath();
+		load_image(path, texture2, is_texture2_loaded);
+		if (is_texture2_loaded) {
+			textureName2.set(result.getName());
+		}
+		else {
+			textureName2.set("None");
+		}
+	}
+}
+
+//Traitement d'image par convolution
+void Renderer::aiguiserToggled(bool & aiguiser) {
+	if (aiguiser) {
+		detectionBordure.set(false);
+		bosseler.set(false);
+		flou.set(false);
+		kernel_type = ConvolutionKernel::sharpen;
+		kernel_name = "aiguiser";
+	}
+}
+
+void Renderer::detectionBordureToggled(bool & detectionBordure) {
+	if (detectionBordure) {
+		aiguiser.set(false);
+		bosseler.set(false);
+		flou.set(false);
+		kernel_type = ConvolutionKernel::edge_detect;
+		kernel_name = "détection de bordure";
+	}
+}
+
+void Renderer::bosselerToggled(bool & bosseler) {
+	if (bosseler) {
+		aiguiser.set(false);
+		detectionBordure.set(false);
+		flou.set(false);
+		kernel_type = ConvolutionKernel::emboss;
+		kernel_name = "bosseler";
+	}
+}
+
+void Renderer::flouToggled(bool & flou) {
+	if (flou) {
+		aiguiser.set(false);
+		detectionBordure.set(false);
+		bosseler.set(false);
+		kernel_type = ConvolutionKernel::blur;
+		kernel_name = "flou";
+	}
+}
+
+// fonction de filtrage par convolution
+void Renderer::filter()
+{
+	// résolution du kernel de convolution
+	const int kernel_size = 3;
+
+	// décalage à partir du centre du kernel
+	const int kernel_offset = kernel_size / 2;
+
+	// nombre de composantes de couleur (RGB)
+	const int color_component_count = 3;
+
+	// indices de l'image
+	int x, y;
+
+	// indices du kernel
+	int i, j;
+
+	// index des composantes de couleur
+	int c;
+
+	// index du pixel de l'image source utilisé pour le filtrage
+	int pixel_index_img_src;
+
+	// index du pixel de l'image de destination en cours de filtrage
+	int pixel_index_img_dst;
+
+	// index du pixel de l'image de destination en cours de filtrage
+	int kernel_index;
+
+	// valeur à un des indices du kernel de convolution
+	float kernel_value;
+
+	// extraire les pixels de l'image source
+	ofPixels pixel_array_src = currentImage.getPixels();
+
+	// extraire les pixels de l'image de destination
+	ofPixels pixel_array_dst = filteredImage.getPixels();
+
+	// couleur du pixel lu dans l'image source
+	ofColor pixel_color_src;
+
+	// couleur du pixel à écrire dans l'image de destination
+	ofColor pixel_color_dst;
+
+	// somme du kernel appliquée à chaque composante de couleur d'un pixel
+	float sum[color_component_count];
+
+	// itération sur les rangées des pixels de l'image source
+	for (y = 0; y < currentImage.getHeight(); ++y)
+	{
+		// itération sur les colonnes des pixels de l'image source
+		for (x = 0; x < currentImage.getWidth(); ++x)
+		{
+			// initialiser le tableau où les valeurs de filtrage sont accumulées
+			for (c = 0; c < color_component_count; ++c)
+				sum[c] = 0;
+
+			// déterminer l'index du pixel de l'image de destination
+			pixel_index_img_dst = (currentImage.getWidth() * y + x) * color_component_count;
+
+			// itération sur les colonnes du kernel de convolution
+			for (j = -kernel_offset; j <= kernel_offset; ++j)
+			{
+				// itération sur les rangées du kernel de convolution
+				for (i = -kernel_offset; i <= kernel_offset; ++i)
+				{
+					// déterminer l'index du pixel de l'image source à lire
+					pixel_index_img_src = (currentImage.getWidth() * (y - j) + (x - i)) * color_component_count;
+					if (pixel_index_img_src < 0 || pixel_index_img_src >= currentImage.getWidth() * currentImage.getHeight() * color_component_count)
+						pixel_color_src = 0;
+					else
+						// lire la couleur du pixel de l'image source
+						pixel_color_src = pixel_array_src.getColor(pixel_index_img_src);
+
+					// déterminer l'indice du facteur à lire dans le kernel de convolution
+					kernel_index = kernel_size * (j + kernel_offset) + (i + kernel_offset);
+
+					// extraction de la valeur à cet index du kernel
+					switch (kernel_type)
+					{
+					case ConvolutionKernel::identity:
+						kernel_value = convolution_kernel_identity.at(kernel_index);
+						break;
+
+					case ConvolutionKernel::emboss:
+						kernel_value = convolution_kernel_emboss.at(kernel_index);
+						break;
+
+					case ConvolutionKernel::sharpen:
+						kernel_value = convolution_kernel_sharpen.at(kernel_index);
+						break;
+
+					case ConvolutionKernel::edge_detect:
+						kernel_value = convolution_kernel_edge_detect.at(kernel_index);
+						break;
+
+					case ConvolutionKernel::blur:
+						kernel_value = convolution_kernel_blur.at(kernel_index);
+						break;
+
+					default:
+						kernel_value = convolution_kernel_identity.at(kernel_index);
+						break;
+					}
+
+					// itération sur les composantes de couleur
+					for (c = 0; c < color_component_count; ++c)
+					{
+						// accumuler les valeurs de filtrage en fonction du kernel de convolution
+						sum[c] = sum[c] + kernel_value * pixel_color_src[c];
+					}
+				}
+			}
+
+			// déterminer la couleur du pixel à partir des valeurs de filtrage accumulées pour chaque composante
+			for (c = 0; c < color_component_count; ++c)
+			{
+				// conversion vers entier et validation des bornes de l'espace de couleur
+				pixel_color_dst[c] = (int)ofClamp(sum[c], 0, 255);
+			}
+
+			// écrire la couleur à l'index du pixel en cours de filtrage
+			pixel_array_dst.setColor(pixel_index_img_dst, pixel_color_dst);
+		}
+	}
+
+	// écrire les pixels dans l'image de destination
+	filteredImage.setFromPixels(pixel_array_dst);
+
+	ofLog() << "<convolution filter done>";
+}
+
+
+
+//Texture procédural
+void Renderer::binaryTreeToggled(bool & binaryTree) {
+	if (binaryTree) {
+		ternaryTree.set(false);
+	}
+}
+
+void Renderer::ternaryTreeToggled(bool & ternaryTree) {
+	if (ternaryTree) {
+		binaryTree.set(false);
+	}
+}
+
+void Renderer::drawTernaryTree(int length)
+{
+	ofDrawLine(0, 0, 0, -length);
+
+	ofPushMatrix();
+	ofRotate(angle);
+	ofDrawLine(0, 0, 0, -length);
+	ofPopMatrix();
+
+	ofPushMatrix();
+	ofRotate(-angle);
+	ofDrawLine(0, 0, 0, -length);
+	ofPopMatrix();
+
+	float tempLength = length;
+	length *= 0.5;
+
+	ofPushMatrix();
+	ofTranslate(0, -tempLength);
+	if (length > 2) {
+		drawTernaryTree(length);
+	}
+	ofPopMatrix();
+
+	ofPushMatrix();
+	ofRotate(angle);
+	ofTranslate(0, -tempLength);
+	if (length > 2) {
+		drawTernaryTree(length);
+	}
+	ofPopMatrix();
+
+	ofPushMatrix();
+	ofRotate(-angle);
+	ofTranslate(0, -tempLength);
+	if (length > 2) {
+		drawTernaryTree(length);
+	}
+	ofPopMatrix();
+}
+
+void Renderer::drawBinaryTree(int length) {
+	ofDrawLine(0, 0, 0, -length);
+	ofTranslate(0, -length);
+
+	length *= 0.66;
+
+	if (length > 2) {
+		ofPushMatrix();
+		ofRotate(angle);
+		drawBinaryTree(length);
+		ofPopMatrix();
+
+		ofPushMatrix();
+		ofRotate(-angle);
+		drawBinaryTree(length);
+		ofPopMatrix();
+	}
+}
+
+//Traitement d'image
+void Renderer::compositionToggled(bool &composition) {
+	if (composition) {
+		convolutionFilter.set(false);
+		proceduralTexture.set(false);
+	}
+}
+void Renderer::convolutionToggled(bool &convolution) {
+	if (convolution) {
+		imageComposition.set(false);
+		proceduralTexture.set(false);
+	}
+}
+void Renderer::proceduralToggled(bool &procedural) {
+	if (procedural) {
+		imageComposition.set(false);
+		convolutionFilter.set(false);
+	}
 }
 
 Renderer::~Renderer() {}
+

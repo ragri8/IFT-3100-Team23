@@ -11,6 +11,7 @@ void Application::update(){
 	time_current = ofGetElapsedTimef();
 	time_elapsed = time_current - time_last;
 	time_last = time_current;
+	renderer.update();
 }
 
 //--------------------------------------------------------------
