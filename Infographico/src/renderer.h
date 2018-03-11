@@ -6,13 +6,14 @@
 #include "primitives/line.h"
 #include "primitives/rectangle.h"
 #include "primitives/circle.h"
+#include "primitives/triangle.h"
 #include "primitives/triangleRect.h"
 #include "historic.h"
 #include "ofxAssimpModelLoader.h"
 #include <cmath>
 
 enum class DrawTool {select, primitive};
-enum class DrawPrimitive {line, circle, rectangle, triangleRect};
+enum class DrawPrimitive {line, circle, rectangle, triangle, triangleRect};
 
 class Renderer {
 public:
@@ -193,7 +194,6 @@ public:
 	void rgbModeSwitched(bool &rgbMode);
     void fillingModeSwitched(bool &fillingMode);
 
-	void saveModif(list<Primitive*>::iterator iter, Action action);
 	void undo();
 	void redo();
 

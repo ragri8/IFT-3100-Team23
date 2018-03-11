@@ -6,7 +6,7 @@
 
 Rectangle::Rectangle(const ofColor& reqColor, const float& reqX1, const float& reqY1, const float& reqX2,
            const float& reqY2, const float& reqThickness, const bool& filled):
-        Primitive(reqColor, reqX1, reqY1), x2(reqX2), y2(reqY2), thickness(reqThickness), is_filled(filled) {
+        Primitive(reqColor, reqX1, reqY1, reqThickness), x2(reqX2), y2(reqY2), is_filled(filled) {
     if (origin_x > x2) {
         swap(origin_x, x2);
     }
@@ -36,6 +36,10 @@ bool Rectangle::getFill() const {
     return is_filled;
 }
 
+pair<float, float> Rectangle::getSecondPoint() const {
+    return make_pair(x2, y2);
+}
+
 void Rectangle::reshape(const float& reqX1, const float& reqY1, const float& reqX2, const float& reqY2) {
     if (reqX1  < reqX2) {
         origin_x = reqX1;
@@ -63,6 +67,16 @@ void Rectangle::translate(const float& reqX, const float& reqY) {
 bool Rectangle::isSelected(const float& reqX, const float& reqY) const {
     bool value = false;
     if (origin_x - thickness <= reqX && reqX <= x2  + thickness && origin_y - thickness <= reqY && reqY <= y2 + thickness) {
+        value = true;
+    }
+    return value;
+}
+
+bool Rectangle::operator==(const Primitive& reqPrimitive) const {
+    bool value = false;
+    if (color == reqPrimitive.getColor() && thickness == reqPrimitive.getThickness()
+        && is_filled == reqPrimitive.getFill() && getOrigin() == reqPrimitive.getOrigin()
+        && getSecondPoint() == reqPrimitive.getSecondPoint()) {
         value = true;
     }
     return value;

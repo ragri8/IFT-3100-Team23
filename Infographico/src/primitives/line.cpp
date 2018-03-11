@@ -6,7 +6,7 @@
 
 Line::Line(const ofColor& reqColor, const float& reqX1, const float& reqY1, const float& reqX2,
      const float& reqY2, const float& reqThickness):
-    Primitive(reqColor, reqX1, reqY1), x2(reqX2), y2(reqY2), thickness(reqThickness) {
+    Primitive(reqColor, reqX1, reqY1, reqThickness), x2(reqX2), y2(reqY2) {
     if (origin_x > x2) {
         swap(origin_x, x2);
         swap(origin_y, y2);
@@ -23,6 +23,10 @@ void Line::draw() const {
     //ofLog() << "< draw line>";
     //ofDrawCircle(x1, y1, thickness/2);
     //ofDrawCircle(x2, y2, thickness/2);
+}
+
+pair<float, float> Line::getSecondPoint() const {
+    return make_pair(x2, y2);
 }
 
 void Line::reshape(const float& reqX1, const float& reqY1, const float& reqX2, const float& reqY2) {
@@ -66,6 +70,15 @@ bool Line::isSelected(const float& reqX, const float& reqY) const {
     } else if (abs(origin_x - reqX) < max(thickness, 2.0f) &&
             origin_y <= reqY &&
             reqY <= y2) {
+        value = true;
+    }
+    return value;
+}
+
+bool Line::operator==(const Primitive& reqPrimitive) const {
+    bool value = false;
+    if (color == reqPrimitive.getColor() && thickness == reqPrimitive.getThickness()
+        &&  getOrigin() == reqPrimitive.getOrigin() && getSecondPoint() == reqPrimitive.getSecondPoint()) {
         value = true;
     }
     return value;

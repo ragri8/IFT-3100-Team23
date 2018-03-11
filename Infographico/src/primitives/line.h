@@ -16,9 +16,11 @@ public:
     void draw() const final;
     bool getFill() const final {return false;}
     void setFill(bool fill_state) final {}
+    pair<float, float> getSecondPoint() const final;
     void reshape(const float& reqX1, const float& reqY1, const float& reqX2, const float& reqY2) final;
     void translate(const float& reqX, const float& reqY) final;
     bool isSelected(const float& reqX, const float& reqY) const final;
+    bool operator==(const Primitive& reqPrimitive) const final;
     Primitive* clone() const final;
     ~Line();
 
@@ -26,7 +28,6 @@ public:
 private:
     float x2;
     float y2;
-    float thickness;
 };
 
 

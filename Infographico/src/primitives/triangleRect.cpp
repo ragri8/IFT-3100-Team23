@@ -6,8 +6,8 @@
 
 TriangleRect::TriangleRect(const ofColor& reqColor, const float& reqX1, const float& reqY1, const float& reqX2,
                     const float& reqY2, const float& reqThickness, const bool& filled):
-        Primitive(reqColor, reqX1, reqY1), x2(reqX1), y2(reqY2), x3(reqX2), y3(reqY1),
-        thickness(reqThickness), is_filled(filled) {
+        Primitive(reqColor, reqX1, reqY1, reqThickness), x2(reqX1), y2(reqY2), x3(reqX2), y3(reqY1),
+        is_filled(filled) {
     primitive_nbr++;
     ofLog() << "<New primitive: (" << primitive_nbr << ") >";
 }
@@ -29,6 +29,10 @@ void TriangleRect::setFill(bool fill_state) {
 
 bool TriangleRect::getFill() const {
     return is_filled;
+}
+
+pair<float, float> TriangleRect::getSecondPoint() const {
+    return make_pair(x3, y2);
 }
 
 void TriangleRect::reshape(const float& reqX1, const float& reqY1, const float& reqX2, const float& reqY2) {
@@ -69,6 +73,16 @@ bool TriangleRect::isSelected(const float& reqX, const float& reqY) const {
         if (reqX <= origin_x && reqY >= origin_y && reqY < (gradient*reqX + intercept) + thickness) {
             value = true;
         }
+    }
+    return value;
+}
+
+bool TriangleRect::operator==(const Primitive& reqPrimitive) const {
+    bool value = false;
+    if (color == reqPrimitive.getColor() && thickness == reqPrimitive.getThickness()
+        && is_filled == reqPrimitive.getFill() &&  getOrigin() == reqPrimitive.getOrigin()
+        && getSecondPoint() == reqPrimitive.getSecondPoint()) {
+        value = true;
     }
     return value;
 }

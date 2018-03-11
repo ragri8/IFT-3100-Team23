@@ -16,7 +16,7 @@ void Renderer::setup() {
 
     is_ctrl_pressed = false;
     current_color = ofColor(255, 0, 0, 255);
-    current_thickness = 3.0f;
+    current_thickness = 8.0f;
     model2D = Model2D();
     history = History();
     draw_tool = DrawTool::primitive;
@@ -206,6 +206,7 @@ void Renderer::draw() {
         origin_slider_x = sliderPosX;
         origin_slider_y = sliderPosY;
         preview_primitive->setFill(is_filled);
+        preview_primitive->setThickness(current_thickness);
         preview_primitive->draw();
     }
     dessinerCurseur(mouse_current_x, mouse_current_y);
@@ -233,6 +234,12 @@ void Renderer::create_preview() {
             Circle circle = Circle(current_color, mouse_press_x, mouse_press_y,
                                    mouse_current_x, mouse_current_y, current_thickness, is_filled);
             preview_primitive = circle.clone();;
+            break;
+        }
+        case DrawPrimitive::triangle: {
+            Triangle triangle = Triangle(current_color, mouse_press_x, mouse_press_y,
+                                                 mouse_current_x, mouse_current_y, current_thickness, is_filled);
+            preview_primitive = triangle.clone();
             break;
         }
         case DrawPrimitive::triangleRect: {
@@ -279,6 +286,7 @@ void Renderer::generate_modified_primitive() {
     alpha = temp_alpha = temp_color.a;
     sliderPosX = origin_slider_x = temp_origin.first;
     sliderPosY = origin_slider_y = temp_origin.second;
+    sliderEpaisseurLigneContour = current_thickness = preview_primitive->getThickness();
     temp_color.a = 0;
     model2D.getCurrentPrimitive()->changeColor(temp_color);
 }
@@ -289,8 +297,11 @@ void Renderer::releaseSelection() {
         ofColor temp_color = model2D.getCurrentPrimitive()->getColor();
         temp_color.a = (unsigned char)temp_alpha;
         model2D.getCurrentPrimitive()->changeColor(temp_color);
-        history.addChange(model2D.lastIndex(), Action::modify, model2D.getCurrentPrimitive());
-        model2D.replaceCurrentPrimitive(preview_primitive);
+        if (!(*preview_primitive == *(model2D.getCurrentPrimitive()))) {
+            history.addChange(model2D.lastIndex(), Action::modify, model2D.getCurrentPrimitive());
+            model2D.replaceCurrentPrimitive(preview_primitive);
+            ofLog() << "<replace selected primitive>";
+        }
         delete preview_primitive;
     }
 }
@@ -306,8 +317,6 @@ void Renderer::deleteSelection() {
         delete preview_primitive;
     }
 }
-
-void Renderer::saveModif(list<Primitive*>::iterator iter, Action action) {}
 
 void Renderer::undo() {
     history.undo(model2D.getPrimitives());
@@ -373,6 +382,9 @@ void Renderer::boutonRectanglePressed() {
 
 void Renderer::boutonTrianglePressed() {
     releaseSelection();
+    draw_tool = DrawTool::primitive;
+    draw_primitive = DrawPrimitive::triangle;
+    ofLog() << "< drawing triangle enabled>";
 }
 
 void Renderer::boutonTriangleRectanglePressed() {

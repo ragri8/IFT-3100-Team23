@@ -15,9 +15,11 @@ public:
     void draw() const final;
     void setFill(bool fill_state) final;
     bool getFill() const final;
+    pair<float, float> getSecondPoint() const final;
     void reshape(const float& reqX1, const float& reqY1, const float& reqX2, const float& reqY2) final;
     void translate(const float& reqX, const float& reqY) final;
     bool isSelected(const float& reqX, const float& reqY) const final;
+    bool operator==(const Primitive& reqPrimitive) const final;
     Primitive* clone() const final;
     ~TriangleRect();
 
@@ -27,7 +29,6 @@ private:
     float y2;
     float x3;
     float y3;
-    float thickness;
     bool is_filled;
 };
 
