@@ -991,8 +991,8 @@ void Renderer::rgbModeSwitched(bool &rgbMode) {
 	{
 		colorPickerGUI.setName("HSB Color Picker");
 		redOrHue.set("hue", currentColor.getHue(), 0, 360);
-		greenOrSaturation.set("saturation", currentColor.getSaturation(), 0, 100);
-		blueOrBrightness.set("brightness", currentColor.getBrightness(), 0, 100);
+		greenOrSaturation.set("saturation", currentColor.getSaturation(), 0, 255);
+		blueOrBrightness.set("brightness", currentColor.getBrightness(), 0, 255);
 	}
 }
 
