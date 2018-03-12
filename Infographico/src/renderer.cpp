@@ -2,16 +2,14 @@
 
 void Renderer::setup() {
     ofSetFrameRate(60);
-	ofSetBackgroundColor(191);
 
     screenWidth = ofGetWidth();
     screenHeight = ofGetHeight();
 
     is2D = true;
+    is_filled = false;
 
-	//Curseur Etienne
-
-    //Curseur Raph
+    //Curseur
     mouse_press_x = mouse_press_y = mouse_current_x = mouse_current_y = 0.0f;
     is_mouse_button_pressed = false;
     is_mouse_button_legit = false;
@@ -26,6 +24,11 @@ void Renderer::setup() {
     is_background_image_loaded = false;
     is_menu_displayed = true;
     is_preview = false;
+    is_selected = false;
+
+    origin_slider_x = 0;
+    origin_slider_y = 0;
+    temp_alpha = 0;
 
     //Modele 3D
     isGenererModele3D = false;
@@ -43,6 +46,7 @@ void Renderer::setup() {
     boutonTriangleRectangle.addListener(this, &Renderer::boutonTriangleRectanglePressed);
     boutonLigne.addListener(this, &Renderer::boutonLignePressed);
     boutonSelection.addListener(this, &Renderer::boutonSelectionPressed);
+    fillingMode.addListener(this, &Renderer::fillingModeSwitched);
 
     boutonMode2D.addListener(this, &Renderer::boutonMode2DToggled);
 	boutonMode3D.addListener(this, &Renderer::boutonMode3DToggled);
@@ -104,7 +108,8 @@ void Renderer::setup() {
     guiDessin.add(boutonSelection.setup("Selection objet"));
 
     guiDessin.add(labelPropriteteDuDessin.setup("Propriete du dessin", ""));
-    guiDessin.add(sliderEpaisseurLigneContour.setup("Epaisseur contour", 1, 1, 50));
+    guiDessin.add(fillingMode.setup("Mode remplissage", false));
+    guiDessin.add(sliderEpaisseurLigneContour.setup("Epaisseur contour", current_thickness, 0.5f, 10.0f));
 
     guiDessin.add(boutonUndo.setup("<-Undo"));
 	guiDessin.add(boutonRedo.setup("Redo->"));
@@ -216,7 +221,7 @@ void Renderer::setup() {
 
 void Renderer::draw() {
     ofClear(255, 255, 255);
-
+    current_thickness = sliderEpaisseurLigneContour;
     //Color picker
     if (rgbMode){
         currentColor = ofColor(redOrHue, greenOrSaturation, blueOrBrightness, alpha);
@@ -280,10 +285,11 @@ void Renderer::draw() {
         // dessiner le color picker
 		colorPickerGUI.setPosition(0, guiMenu.getHeight());
 		colorPickerGUI.draw();
+		ofFill();
 		ofSetColor(currentColor);
 		ofDrawRectangle(0, colorPickerGUI.getPosition().y + colorPickerGUI.getHeight(), colorPickerGUI.getWidth(), 20);
 		ofNoFill();
-		ofSetLineWidth(5);
+		ofSetLineWidth(3);
 		ofSetColor(0, 0, 0);
 		ofDrawRectangle(0, colorPickerGUI.getPosition().y + colorPickerGUI.getHeight(), colorPickerGUI.getWidth(), 20);
 		ofFill();
@@ -318,9 +324,22 @@ void Renderer::draw() {
             genererOctaedre();
         }
     }
-
+    if (is_filled) {
+        ofFill();
+    } else {
+        ofNoFill();
+    }
     if (is_mouse_button_pressed && is_mouse_button_legit && draw_tool == DrawTool::primitive && is_preview) {
         preview_form();
+    }
+    if (is_selected) {
+        preview_primitive->changeColor(currentColor);
+        preview_primitive->translate(sliderPosX-origin_slider_x, sliderPosY-origin_slider_y);
+        origin_slider_x = sliderPosX;
+        origin_slider_y = sliderPosY;
+        preview_primitive->setFill(is_filled);
+        preview_primitive->setThickness(current_thickness);
+        preview_primitive->draw();
     }
     dessinerCurseur(mouse_current_x, mouse_current_y);
 }
@@ -351,13 +370,19 @@ void Renderer::create_preview() {
         }
         case DrawPrimitive::circle: {
             Circle circle = Circle(currentColor, mouse_press_x, mouse_press_y,
-                                   mouse_current_x, mouse_current_y, current_thickness);
+                                   mouse_current_x, mouse_current_y, current_thickness, is_filled);
             preview_primitive = circle.clone();;
+            break;
+        }
+        case DrawPrimitive::triangle: {
+            Triangle triangle = Triangle(currentColor, mouse_press_x, mouse_press_y,
+                                                 mouse_current_x, mouse_current_y, current_thickness, is_filled);
+            preview_primitive = triangle.clone();
             break;
         }
         case DrawPrimitive::triangleRect: {
             TriangleRect triangle = TriangleRect(currentColor, mouse_press_x, mouse_press_y,
-                                                 mouse_current_x, mouse_current_y, current_thickness);
+                                                 mouse_current_x, mouse_current_y, current_thickness, is_filled);
             preview_primitive = triangle.clone();
             break;
         }
@@ -372,20 +397,66 @@ void Renderer::preview_form() {
 }
 
 void Renderer::addForm() {
-    model2D.addPrimitive(*preview_primitive);
-    history.addChange(model2D.lastIndex(), Action::add, preview_primitive);
+    if (preview_primitive->getOrigin() != preview_primitive->getSecondPoint()) {
+        model2D.addPrimitive(*preview_primitive);
+        history.addChange(model2D.lastIndex(), Action::add, preview_primitive);
+    }
     delete preview_primitive;
 }
 
 void Renderer::selectObject() {
+    releaseSelection();
     if (model2D.findPrimitive(mouse_current_x, mouse_current_y)) {
         ofLog() << "< object found at (" << mouse_current_x << ", " << mouse_current_y << ")>";
+        is_selected = true;
+        generate_modified_primitive();
     } else {
         ofLog() << "< object not found at (" << mouse_current_x << ", " << mouse_current_y << ")>";
     }
 }
 
-void Renderer::saveModif(list<Primitive*>::iterator iter, Action action) {}
+void Renderer::generate_modified_primitive() {
+    ofColor temp_color = model2D.getCurrentPrimitive()->getColor();
+    pair<float, float> temp_origin = model2D.getCurrentPrimitive()->getOrigin();
+    preview_primitive = (*model2D.getCurrentPrimitive()).clone();
+    fillingMode = is_filled = model2D.getCurrentPrimitive()->getFill();
+    redOrHue = temp_color.r;
+    greenOrSaturation = temp_color.g;
+    blueOrBrightness = temp_color.b;
+    alpha = temp_alpha = temp_color.a;
+    sliderPosX = origin_slider_x = temp_origin.first;
+    sliderPosY = origin_slider_y = temp_origin.second;
+    sliderEpaisseurLigneContour = current_thickness = preview_primitive->getThickness();
+    temp_color.a = 0;
+    model2D.getCurrentPrimitive()->changeColor(temp_color);
+}
+
+void Renderer::releaseSelection() {
+    if (is_selected) {
+        is_selected = false;
+        ofColor temp_color = model2D.getCurrentPrimitive()->getColor();
+        temp_color.a = (unsigned char)temp_alpha;
+        model2D.getCurrentPrimitive()->changeColor(temp_color);
+        if (!(*preview_primitive == *(model2D.getCurrentPrimitive()))) {
+            history.addChange(model2D.lastIndex(), Action::modify, model2D.getCurrentPrimitive());
+            model2D.replaceCurrentPrimitive(preview_primitive);
+            ofLog() << "<replace selected primitive>";
+        }
+        delete preview_primitive;
+    }
+}
+
+void Renderer::deleteSelection() {
+    if (is_selected) {
+        is_selected = false;
+        ofColor temp_color = model2D.getCurrentPrimitive()->getColor();
+        temp_color.a = (unsigned char)temp_alpha;
+        model2D.getCurrentPrimitive()->changeColor(temp_color);
+        history.addChange(model2D.getCurrentIndex(), Action::remove, model2D.getCurrentPrimitive());
+        model2D.deleteCurrentPrimitive();
+        delete preview_primitive;
+    }
+}
 
 void Renderer::undo() {
     history.undo(model2D.getPrimitives());
@@ -418,32 +489,42 @@ void Renderer::image_export(const string name, const string extension) const {
 //*******************************************//
 
 void Renderer::boutonLignePressed() {
+    releaseSelection();
     draw_tool = DrawTool::primitive;
     draw_primitive = DrawPrimitive::line;
     ofLog() << "< drawing line enabled>";
 }
 
 void Renderer::boutonCerclePressed() {
+    releaseSelection();
     draw_tool = DrawTool::primitive;
     draw_primitive = DrawPrimitive::circle;
     ofLog() << "< drawing circle enabled>";
 }
 
 void Renderer::boutonRectanglePressed() {
+    releaseSelection();
     draw_tool = DrawTool::primitive;
     draw_primitive = DrawPrimitive::rectangle;
     ofLog() << "< drawing rectangle enabled>";
 }
 
-void Renderer::boutonTrianglePressed() {}
+void Renderer::boutonTrianglePressed() {
+    releaseSelection();
+    draw_tool = DrawTool::primitive;
+    draw_primitive = DrawPrimitive::triangle;
+    ofLog() << "< drawing triangle enabled>";
+}
 
 void Renderer::boutonTriangleRectanglePressed() {
+    releaseSelection();
     draw_tool = DrawTool::primitive;
     draw_primitive = DrawPrimitive::triangleRect;
     ofLog() << "< drawing rectangular triangle enabled>";
 }
 
 void Renderer::boutonSelectionPressed() {
+    releaseSelection();
     draw_tool = DrawTool::select;
     ofLog() << "< selection mode enabled>";
 }
@@ -489,10 +570,12 @@ void Renderer::boutonExporterImagePressed() {
 }
 
 void Renderer::boutonUndoPressed() {
+    releaseSelection();
     undo();
 }
 
 void Renderer::boutonRedoPressed() {
+    releaseSelection();
     redo();
 }
 
@@ -1070,7 +1153,7 @@ void Renderer::animerMaillage() {
 		sliderProportion3DY = sliderProportion3DY + 0.001;
 		sliderProportion3DZ = sliderProportion3DZ + 0.001;
 	}
-	else if(animationGrossit==false){
+	else {
 		sliderProportion3DX = sliderProportion3DX - 0.001;
 		sliderProportion3DY = sliderProportion3DY - 0.001;
 		sliderProportion3DZ = sliderProportion3DZ - 0.001;
@@ -1382,5 +1465,10 @@ void Renderer::proceduralToggled(bool &procedural) {
 	}
 }
 
-Renderer::~Renderer() {}
+void Renderer::fillingModeSwitched(bool &fillingMode) {
+    is_filled = fillingMode;
+}
 
+Renderer::~Renderer() {
+    releaseSelection();
+}

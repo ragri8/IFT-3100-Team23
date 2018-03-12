@@ -1,16 +1,16 @@
 //
-// Created by deziar27 on 18-03-06.
+// Created by deziar27 on 18-03-11.
 //
 
-#ifndef INFOGRAPHICO_RECTANGLE_H
-#define INFOGRAPHICO_RECTANGLE_H
+#ifndef INFOGRAPHICO_TRIANGLE_H
+#define INFOGRAPHICO_TRIANGLE_H
 
 #include "primitive.h"
 
-class Rectangle: public Primitive {
+class Triangle: public Primitive {
 public:
-    Rectangle(const ofColor& reqColor, const float& reqX1, const float& reqY1, const float& reqX2,
-         const float& reqY2, const float& reqThickness, const bool& filled=false);
+    Triangle(const ofColor& reqColor, const float& reqX1, const float& reqY1, const float& reqX2,
+                 const float& reqY2, const float& reqThickness, const bool& filled=false);
 
     void draw() const final;
     void setFill(bool fill_state) final;
@@ -21,16 +21,16 @@ public:
     bool isSelected(const float& reqX, const float& reqY) const final;
     bool operator==(const Primitive& reqPrimitive) const final;
     Primitive* clone() const final;
-    ~Rectangle();
+    ~Triangle();
 
 
 private:
     float x2;
     float y2;
+    float x3;
+    float y3;
     bool is_filled;
-
-
 };
 
 
-#endif //INFOGRAPHICO_RECTANGLE_H
+#endif //INFOGRAPHICO_TRIANGLE_H

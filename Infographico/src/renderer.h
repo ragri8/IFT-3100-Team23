@@ -6,10 +6,10 @@
 #include "primitives/line.h"
 #include "primitives/rectangle.h"
 #include "primitives/circle.h"
+#include "primitives/triangle.h"
 #include "primitives/triangleRect.h"
 #include "historic.h"
 #include "ofxAssimpModelLoader.h"
-#include <math.h> 
 #include <cmath>
 #include <limits>
 
@@ -64,7 +64,7 @@ const std::array<float, 9> convolution_kernel_blur
 };
 
 enum class DrawTool {select, primitive};
-enum class DrawPrimitive {line, circle, rectangle, triangleRect};
+enum class DrawPrimitive {line, circle, rectangle, triangle, triangleRect};
 
 class Renderer {
 public:
@@ -73,6 +73,7 @@ public:
 	float screenHeight;
 
 	bool is2D;
+    bool is_filled;
 
 	//Curseur
 	float mouse_press_x;
@@ -85,8 +86,12 @@ public:
 	float current_thickness;
 	Primitive* preview_primitive;
     bool is_preview;
+    bool is_selected;
 	DrawTool draw_tool;
 	DrawPrimitive draw_primitive;
+    float origin_slider_x;
+    float origin_slider_y;
+    float temp_alpha;
 
 	Model2D model2D;
 	History history;
@@ -115,6 +120,7 @@ public:
 	ofColor currentColor;
 	ofxPanel colorPickerGUI;
 	ofxToggle rgbMode;
+    ofxToggle fillingMode;
 	ofParameter<float> redOrHue;
 	ofParameter<float> greenOrSaturation;
 	ofParameter<float> blueOrBrightness;
@@ -204,7 +210,7 @@ public:
     ofxButton boutonSelection;
 
 	ofxLabel labelPropriteteDuDessin;
-	ofxIntSlider sliderEpaisseurLigneContour;
+	ofxFloatSlider sliderEpaisseurLigneContour;
 
 	ofxButton boutonUndo;
 	ofxButton boutonRedo;
@@ -272,6 +278,8 @@ public:
 	void preview_form();
 	void addForm();
 	void selectObject();
+    void releaseSelection();
+    void deleteSelection();
 
 	//Geometrie
 	void genererModele3D();
@@ -280,8 +288,8 @@ public:
 
 	//Color picker
 	void rgbModeSwitched(bool &rgbMode);
+    void fillingModeSwitched(bool &fillingMode);
 
-	void saveModif(list<Primitive*>::iterator iter, Action action);
 	void undo();
 	void redo();
 	//primitive geo 3D	//gui 3d
@@ -328,11 +336,13 @@ public:
 	void convolutionToggled(bool &convolution);
 	void proceduralToggled(bool &procedural);	
 
-	void load_image(const std::string path);
 	void image_export(const std::string name, const std::string extension) const;
 
 	void mouseReleased(ofMouseEventArgs & mouse);
 
 	~Renderer();
+
+private:
+    void generate_modified_primitive();
 
 };

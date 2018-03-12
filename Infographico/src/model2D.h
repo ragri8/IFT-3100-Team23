@@ -22,6 +22,9 @@ public:
     unsigned int lastIndex() const;
     vector<Primitive*>::iterator insertPrimitive(const vector<Primitive*>::iterator& iter, const Primitive& reqPrimitive);
     vector<Primitive*>* getPrimitives();
+    Primitive* getCurrentPrimitive();
+    void deleteCurrentPrimitive();
+    void replaceCurrentPrimitive(Primitive* reqPrimitive);
     bool findPrimitive(const float reqX, const float reqY);
     void deletePrimitive(const vector<Primitive*>::iterator& iter);
     virtual ~Model2D();

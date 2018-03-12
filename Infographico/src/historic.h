@@ -19,12 +19,6 @@ public:
     void redo(vector<Primitive*>* reqVector);
 
     void addChange(unsigned int index, Action action, Primitive* primitive);
-    tuple<unsigned int, Action, Primitive*> restoreChange() const;
-    void deleteLast();
-
-    void addRestoredChange(unsigned int index, Action action, Primitive* primitive);
-    tuple<unsigned int, Action, Primitive*> unrestoreChange() const;
-    void deleteRestoredLast();
     void eraseRestored();
 
     ~History();

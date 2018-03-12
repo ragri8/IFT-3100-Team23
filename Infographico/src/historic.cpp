@@ -4,7 +4,7 @@
 
 #include "historic.h"
 
-History::History() {}
+History::History()=default;
 
 void History::undo(vector<Primitive*>* reqVector) {
     if (!previous_states.empty()) {
@@ -30,6 +30,12 @@ void History::undo(vector<Primitive*>* reqVector) {
                 break;
 
             case Action::modify:
+                backup_tuple = make_tuple(rest_index, Action::modify, (*reqVector)[rest_index]->clone());
+                restored_states.push(backup_tuple);
+                delete *(reqVector->begin() + rest_index);
+                reqVector->erase(reqVector->begin() + rest_index);
+                reqVector->insert(reqVector->begin() + rest_index, rest_primitive->clone());
+                delete rest_primitive;
                 break;
         }
         previous_states.pop();
@@ -60,6 +66,12 @@ void History::redo(vector<Primitive*>* reqVector) {
                 break;
 
             case Action::modify:
+                backup_tuple = make_tuple(rest_index, Action::modify, (*reqVector)[rest_index]->clone());
+                previous_states.push(backup_tuple);
+                delete *(reqVector->begin() + rest_index);
+                reqVector->erase(reqVector->begin() + rest_index);
+                reqVector->insert(reqVector->begin() + rest_index, rest_primitive->clone());
+                delete rest_primitive;
                 break;
         }
         restored_states.pop();
@@ -69,32 +81,6 @@ void History::redo(vector<Primitive*>* reqVector) {
 void History::addChange(unsigned int index, Action action, Primitive* primitive) {
     previous_states.push(make_tuple(index, action, primitive->clone()));
     eraseRestored();
-}
-
-tuple<unsigned int, Action, Primitive*> History::restoreChange() const {
-    return (previous_states.top());
-}
-
-void History::deleteLast() {
-    std::tuple<unsigned int, Action, Primitive*> tuple;
-    tuple = previous_states.top();
-    restored_states.push(tuple);
-    previous_states.pop();
-}
-
-void History::addRestoredChange(unsigned int index, Action action, Primitive* primitive) {
-    restored_states.push(make_tuple(index, action, primitive->clone()));
-}
-
-tuple<unsigned int, Action, Primitive*> History::unrestoreChange() const {
-    return restored_states.top();
-}
-
-void History::deleteRestoredLast() {
-    std::tuple<unsigned int, Action, Primitive*> tuple;
-    tuple = restored_states.top();
-    previous_states.push(tuple);
-    restored_states.pop();
 }
 
 void History::eraseRestored() {

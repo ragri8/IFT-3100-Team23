@@ -46,6 +46,20 @@ vector<Primitive*>* Model2D::getPrimitives() {
     return &v_primitives;
 }
 
+Primitive* Model2D::getCurrentPrimitive() {
+    return v_primitives[current_index];
+}
+
+void Model2D::deleteCurrentPrimitive() {
+    delete v_primitives[current_index];
+    v_primitives.erase(v_primitives.begin()+current_index);
+}
+
+void Model2D::replaceCurrentPrimitive(Primitive* reqPrimitive) {
+    delete v_primitives[current_index];
+    v_primitives[current_index] = reqPrimitive->clone();
+}
+
 bool Model2D::findPrimitive(const float reqX, const float reqY) {
     bool isFound = false;
     for (unsigned int i = v_primitives.size(); i != 0; i--) {
