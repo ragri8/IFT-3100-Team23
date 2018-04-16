@@ -56,10 +56,55 @@ const std::array<float, 9> convolution_kernel_blur
 	1.0f / 9.0f,  1.0f / 9.0f,  1.0f / 9.0f
 };
 
+/**********************/
+//position camera
+enum class Camera { front, back, left, right, top, down, free, orbit };
+
+//courbe parametrique
+enum class CurveType {bezier, hermite, splineDeBezier};
+
+inline void bezier(float t,
+	float p1x, float p1y, float p1z,
+	float p2x, float p2y, float p2z,
+	float p3x, float p3y, float p3z,
+	float p4x, float p4y, float p4z,
+	float&  x, float& y, float&  z)
+{
+	float u = 1 - t;
+	float uu = u * u;
+	float uuu = uu * u;
+	float tt = t * t;
+	float ttt = tt * t;
+
+	x = uuu * p1x + 3 * uu * t * p2x + 3 * u * tt * p3x + ttt * p4x;
+	y = uuu * p1y + 3 * uu * t * p2y + 3 * u * tt * p3y + ttt * p4y;
+	z = uuu * p1z + 3 * uu * t * p2z + 3 * u * tt * p3z + ttt * p4z;
+}
+
+inline void hermite(
+	float t,
+	float p1x, float p1y, float p1z,
+	float p2x, float p2y, float p2z,
+	float p3x, float p3y, float p3z,
+	float p4x, float p4y, float p4z,
+	float&  x, float& y, float&  z)
+{
+	float u = 1 - t;
+	float uu = u * u;
+	float uuu = uu * u;
+	float tt = t * t;
+	float ttt = tt * t;
+
+	x = (2 * ttt - 3 * tt + 1) * p1x + (ttt - 2 * tt + t) * p2x + (ttt - tt) * p3x + (-2 * ttt + 3 * tt) * p4x;
+	y = (2 * ttt - 3 * tt + 1) * p1y + (ttt - 2 * tt + t) * p2y + (ttt - tt) * p3y + (-2 * ttt + 3 * tt) * p4y;
+	z = (2 * ttt - 3 * tt + 1) * p1z + (ttt - 2 * tt + t) * p2z + (ttt - tt) * p3z + (-2 * ttt + 3 * tt) * p4z;
+}
+
+/************************/ 
+
 class Renderer
 {
 public:
-	
 	float screenWidth;
 	float screenHeight;
 	
@@ -210,6 +255,133 @@ public:
 	ofxToggle dessierBoite;
 	ofxLabel labelEffet;
 
+	/***************************/
+	//interface camera
+	ofxLabel labelCamera;
+	ofxLabel labelBougerCamera;
+	ofxLabel labelZoomCamera;
+	ofParameter<bool> toggleFrontCamera;
+	ofParameter<bool> toggleBackCamera;
+	ofParameter<bool> toggleLeftCamera;
+	ofParameter<bool> toggleRightCamera;
+	ofParameter<bool> toggleTopCamera;
+	ofParameter<bool> toggleBottomCamera;
+	ofxLabel labelModeDeProjection;
+	ofParameter<bool> toggleProjectionPerspective;
+	ofParameter<bool> toggleProjectionOrthogonale;
+
+	//interface courbe parametrique
+	ofxLabel labelCourbeParametrique;
+	ofxLabel labelPointDeControle;
+	ofParameter<string> labelChoixPointDeControle;
+	ofParameter<string> labelDeplacerPointDeControle;
+	ofParameter<bool> toggleCourbeDeBezier;
+	ofParameter<bool> toggleCourbeDeHermite;
+	ofParameter<bool> toggleCourbeSplineDeBezier;
+
+	//interface surface parametrique 
+	ofxLabel labelSurfaceParametrique;
+	ofxLabel labelPointDeControleSurface;
+	ofParameter<string> labelChoixPointDeControleSurface;
+	ofParameter<string> labelDeplacerPointDeControleSurface;
+	ofParameter<bool> toggleSurfaceDeCoons;
+
+	//Camera
+	Camera camera_active;
+
+	ofCamera camera_front;
+	ofCamera camera_back;
+	ofCamera camera_left;
+	ofCamera camera_right;
+	ofCamera camera_top;
+	ofCamera camera_down;
+
+	ofCamera* camera;
+
+	ofQuaternion camera_orientation;
+
+	ofVec3f camera_position;
+	ofVec3f camera_target;
+
+	float camera_near;
+	float camera_far;
+
+	float offset_camera;
+	float offset_scene;
+
+	float speed_delta;
+	float speed_translation;
+
+	float time_current;
+	float time_last;
+	float time_elapsed;
+
+	int index_x;
+	int index_y;
+	int index_z;
+
+	bool is_camera_move_left;
+	bool is_camera_move_right;
+	bool is_camera_move_up;
+	bool is_camera_move_down;
+	bool is_camera_move_forward;
+	bool is_camera_move_backward;
+
+	//Courbe parametrique
+	bool isCourbeParametriqueActive;
+	CurveType curveId;
+	ofPolyline lineRenderer;
+	ofVec3f* pointDeControleSelectionne;
+
+	ofVec3f pointDeControle1;
+	ofVec3f pointDeControle2;
+	ofVec3f pointDeControle3;
+	ofVec3f pointDeControle4;
+	ofVec3f pointDeControle5;
+	ofVec3f pointDeControle6;
+
+	ofVec3f positionDansCourbe;
+
+	int resolutionCourbe;
+	int index;
+
+	float vitessePointDeControle;
+
+	ofVec3f tangente1;
+	ofVec3f tangente2;
+
+	int rayonPointDeControle;
+	//Surface parametrique
+	bool isSurfaceParametriqueActive;
+
+	ofVec3f* pointDeControleSelectionneSurface;
+
+	ofVec3f pointDeControleSurface1;
+	ofVec3f pointDeControleSurface2;
+	ofVec3f pointDeControleSurface3;
+	ofVec3f pointDeControleSurface4;
+	ofVec3f pointDeControleSurface5;
+	ofVec3f pointDeControleSurface6;
+	ofVec3f pointDeControleSurface7;
+	ofVec3f pointDeControleSurface8;
+
+	ofVec3f positionDansCourbeU;
+	ofVec3f positionDansCourbeV;
+	int resolutionSurface;
+
+	ofPolyline lineRendererC1;
+	ofPolyline lineRendererC2;
+	ofPolyline lineRendererC3;
+	ofPolyline lineRendererC4;
+
+	vector<ofPolyline> lignesDeSurfaceV;
+	vector<ofPolyline> lignesDeSurfaceU;
+	ofVec3f lerpu;
+	ofVec3f lerpv;
+	ofVec3f blerp;
+	ofVec3f surfaceCoons;
+	/*************************/
+
 
 	
 	//Ecouteur de l'interface
@@ -229,7 +401,28 @@ public:
 	void boutonLapinPressed();
 	void boutonDragonPressed();
 
+	/*********************************/
+	//Camera
+	void toggleFrontCameraPressed(bool &front);
+	void toggleBackCameraPressed(bool &back);
+	void toggleLeftCameraPressed(bool &left);
+	void toggleRightCameraPressed(bool &right);
+	void toggleTopCameraPressed(bool &top);
+	void toggleBottomCameraPressed(bool &bottom);
 
+	void toggleProjectionPerspectivePressed(bool &perspective);
+	void toggleProjectionOrthogonalePressed(bool &orthogonale);
+
+	//Courbe parametrique
+	void toggleCourbeDeBezierPressed(bool &bezier);
+	void toggleCourbeDeHermitePressed(bool &hermite);
+	void toggleCourbeSplineDeBezierPressed(bool &splineDeBezier);
+	void resetCourbeParametrique();
+
+	//Surface parametrique
+	void toggleSurfaceDeCoonsPressed(bool &coons);
+	void resetSurfaceParametrique();
+	/*********************************/
 
 
 	void setup();
@@ -301,4 +494,9 @@ public:
 	void proceduralToggled(bool &procedural);
 	void importImagePressed();
 
+	/********************/
+	//Camera
+	void setup_camera();
+	void reset();
+	/*********************/
 };
