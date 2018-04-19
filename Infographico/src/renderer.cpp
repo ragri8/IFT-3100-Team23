@@ -79,6 +79,14 @@ void Renderer::setup() {
 	guiMenu.add(convolutionFilter.set("Filtre de convolution", false));
 	guiMenu.add(proceduralTexture.set("Texture Procedurale", false));
 
+	guiMenu.add(labelCourbeParametrique.setup("Courbes parametriques", ""));
+	guiMenu.add(labelPointDeControle.setup("Point de controle", ""));
+	guiMenu.add(labelChoixPointDeControle.set("Choix : 1,2,3,4,5,6"));
+	guiMenu.add(labelDeplacerPointDeControle.set("Deplacer : fleches"));
+	guiMenu.add(toggleCourbeDeBezier.set("Courbe de Bezier", false));
+	guiMenu.add(toggleCourbeDeHermite.set("Courbe de Hermite", false));
+	guiMenu.add(toggleCourbeSplineDeBezier.set("Spline de Bezier", false));
+
     guiMenu.setPosition(0, 0);
 
 
@@ -217,6 +225,109 @@ void Renderer::setup() {
 
     ofAddListener(ofEvents().mouseReleased, this, &Renderer::mouseReleased, OF_EVENT_ORDER_BEFORE_APP - 100);
 
+	//Camera
+	camera_position = { 0.0f, 0.0f, 0.0f };
+	camera_target = { 0.0f, 0.0f, 0.0f };
+
+	camera_near = 50.0f;
+	camera_far = 1750.0f;
+
+	speed_delta = 250.0f;
+
+	is_camera_move_left = false;
+	is_camera_move_right = false;
+	is_camera_move_up = false;
+	is_camera_move_down = false;
+	is_camera_move_forward = false;
+	is_camera_move_backward = false;
+
+
+	ofEnableDepthTest();
+	resetCamera();
+
+	setup_camera();
+	ofDisableDepthTest();
+
+	//Courbe parametrique
+	isCourbeParametriqueActive = false;
+	resolutionCourbe = 100;
+
+	curveId = CurveType::bezier;
+	resetCourbeParametrique();
+	vitessePointDeControle = 250.0f;
+	//surface parametrique
+	isSurfaceParametriqueActive = false;
+	resolutionSurface = 100;
+	rayonPointDeControle = 12;
+	resetSurfaceParametrique();
+
+	for (int i = 0; i <= resolutionSurface; ++i) {
+		lineRendererC1.addVertex(ofPoint());
+	}
+	for (int i = 0; i <= resolutionSurface; ++i) {
+		lineRendererC2.addVertex(ofPoint());
+	}
+	for (int i = 0; i <= resolutionSurface; ++i) {
+		lineRendererC3.addVertex(ofPoint());
+	}
+	for (int i = 0; i <= resolutionSurface; ++i) {
+		lineRendererC4.addVertex(ofPoint());
+	}
+
+	//triangulation
+	isTriangulation = false;
+
+	//brume
+	brumeActiver = false;
+
+	//interface brume
+	guiModel3D.add(toogleActiverBrume.set("Activer brume", false));
+	//interface camera
+	guiModel3D.add(labelCamera.setup("Camera", ""));
+	guiModel3D.add(labelBougerCamera.setup("Pour bouger", "Fleches"));
+	guiModel3D.add(labelZoomCamera.setup("Zoom", "+, -"));
+	guiModel3D.add(toggleFrontCamera.set("Camera de devant", true));
+	guiModel3D.add(toggleBackCamera.set("Camera de derriere", false));
+	guiModel3D.add(toggleLeftCamera.set("Camera de gauche", false));
+	guiModel3D.add(toggleRightCamera.set("Camera de droite", false));
+	guiModel3D.add(toggleTopCamera.set("Camera du dessus", false));
+	guiModel3D.add(toggleBottomCamera.set("Camera du dessous", false));
+	guiModel3D.add(labelModeDeProjection.setup("Mode de projection", ""));
+	guiModel3D.add(toggleProjectionPerspective.set("Projection en perspective", true));
+	guiModel3D.add(toggleProjectionOrthogonale.set("Projection orthogonale", false));
+	//interface surface parametrique
+	guiModel3D.add(labelSurfaceParametrique.setup("Surface parametrique", ""));
+	guiModel3D.add(labelPointDeControleSurface.setup("Point de controle", ""));
+	guiModel3D.add(labelChoixPointDeControleSurface.set("Choix : 1,2,3,4,5,6,7,8"));
+	guiModel3D.add(labelDeplacerPointDeControleSurface.set("Deplacer : w,a,s,d"));
+	guiModel3D.add(toggleSurfaceDeCoons.set("Surface de Coons", false));
+	//interface triangulation
+	guiModel3D.add(toogleTriangulation.set("Ajouter triangulation", false));
+
+	toggleFrontCamera.addListener(this, &Renderer::toggleFrontCameraPressed);
+	toggleBackCamera.addListener(this, &Renderer::toggleBackCameraPressed);
+	toggleLeftCamera.addListener(this, &Renderer::toggleLeftCameraPressed);
+	toggleRightCamera.addListener(this, &Renderer::toggleRightCameraPressed);
+	toggleTopCamera.addListener(this, &Renderer::toggleTopCameraPressed);
+	toggleBottomCamera.addListener(this, &Renderer::toggleBottomCameraPressed);
+
+	toggleProjectionOrthogonale.addListener(this, &Renderer::toggleProjectionOrthogonalePressed);
+	toggleProjectionPerspective.addListener(this, &Renderer::toggleProjectionPerspectivePressed);
+
+	//interface courbe parametrique
+	toggleCourbeDeBezier.addListener(this, &Renderer::toggleCourbeDeBezierPressed);
+	toggleCourbeDeHermite.addListener(this, &Renderer::toggleCourbeDeHermitePressed);
+	toggleCourbeSplineDeBezier.addListener(this, &Renderer::toggleCourbeSplineDeBezierPressed);
+
+	//interface surface parametrique
+	toggleSurfaceDeCoons.addListener(this, &Renderer::toggleSurfaceDeCoonsPressed);
+
+	//interface triangulation
+	toogleTriangulation.addListener(this, &Renderer::toogleTriangulationPressed);
+
+	//interface brume
+	toogleActiverBrume.addListener(this, &Renderer::toggleActiverBrumePressed);
+
 }
 
 void Renderer::draw() {
@@ -276,7 +387,78 @@ void Renderer::draw() {
 		
         if (!is2D) {
             guiModel3D.setPosition(screenWidth - guiDessin.getWidth(), 0);
-            guiModel3D.draw();
+			camera->begin();
+
+			if (camera_active != Camera::front)
+				camera_front.draw();
+			if (camera_active != Camera::back)
+				camera_back.draw();
+			if (camera_active != Camera::left)
+				camera_left.draw();
+			if (camera_active != Camera::right)
+				camera_right.draw();
+			if (camera_active != Camera::top)
+				camera_top.draw();
+			if (camera_active != Camera::down)
+				camera_down.draw();
+
+			ofEnableDepthTest();
+			if (brumeActiver) {
+				activerBrume();
+			}
+			ofDisableDepthTest();
+
+			if (isSurfaceParametriqueActive) {
+
+				ofSetColor(150, 150, 150);
+				ofSetLineWidth(4.0f);
+				ofDrawLine(pointDeControleSurface1.x, pointDeControleSurface1.y, pointDeControleSurface1.z, pointDeControleSurface2.x, pointDeControleSurface2.y, pointDeControleSurface2.z);
+				ofDrawLine(pointDeControleSurface3.x, pointDeControleSurface3.y, pointDeControleSurface3.z, pointDeControleSurface4.x, pointDeControleSurface4.y, pointDeControleSurface4.z);
+				ofDrawLine(pointDeControleSurface5.x, pointDeControleSurface5.y, pointDeControleSurface5.z, pointDeControleSurface6.x, pointDeControleSurface6.y, pointDeControleSurface6.z);
+				ofDrawLine(pointDeControleSurface7.x, pointDeControleSurface7.y, pointDeControleSurface7.z, pointDeControleSurface8.x, pointDeControleSurface8.y, pointDeControleSurface8.z);
+
+				ofSetColor(66, 215, 244);
+				ofSetLineWidth(8.0f);
+
+				lineRendererC1.draw();
+				lineRendererC2.draw();
+				lineRendererC3.draw();
+				lineRendererC4.draw();
+
+				ofSetColor(65, 71, 244);
+				ofDrawEllipse(pointDeControleSurface1.x, pointDeControleSurface1.y, pointDeControleSurface1.z, rayonPointDeControle, rayonPointDeControle);
+				ofDrawEllipse(pointDeControleSurface2.x, pointDeControleSurface2.y, pointDeControleSurface2.z, rayonPointDeControle, rayonPointDeControle);
+				ofDrawEllipse(pointDeControleSurface3.x, pointDeControleSurface3.y, pointDeControleSurface3.z, rayonPointDeControle, rayonPointDeControle);
+				ofDrawEllipse(pointDeControleSurface4.x, pointDeControleSurface4.y, pointDeControleSurface4.z, rayonPointDeControle, rayonPointDeControle);
+				ofDrawEllipse(pointDeControleSurface5.x, pointDeControleSurface5.y, pointDeControleSurface5.z, rayonPointDeControle, rayonPointDeControle);
+				ofDrawEllipse(pointDeControleSurface6.x, pointDeControleSurface6.y, pointDeControleSurface6.z, rayonPointDeControle, rayonPointDeControle);
+				ofDrawEllipse(pointDeControleSurface7.x, pointDeControleSurface7.y, pointDeControleSurface7.z, rayonPointDeControle, rayonPointDeControle);
+				ofDrawEllipse(pointDeControleSurface8.x, pointDeControleSurface8.y, pointDeControleSurface8.z, rayonPointDeControle, rayonPointDeControle);
+
+				ofSetColor(46, 48, 51);
+				ofSetLineWidth(2.0f);
+				for (int i = 0; i < resolutionSurface; i++) {
+					lignesDeSurfaceV.at(i).draw();
+				}
+				for (int i = 0; i < resolutionSurface; i++) {
+					lignesDeSurfaceU.at(i).draw();
+				}
+
+			}
+			if (isGenererModele3D) {
+				genererModele3D();
+				if (dessierBoite) {
+					genererBoite();
+				}
+			}
+			else if (isGenererTetraedre) {
+				genererTetraedre();
+			}
+			else if (isGenererOctaedre) {
+				genererOctaedre();
+			}
+			camera->end();
+			guiModel3D.draw();
         } else {
             guiDessin.setPosition(screenWidth - guiDessin.getWidth(), 0);
             guiDessin.draw();
@@ -310,20 +492,69 @@ void Renderer::draw() {
 			textureProceduralGUI.setPosition(0, colorPickerGUI.getPosition().y + colorPickerGUI.getHeight() + 20);
 			textureProceduralGUI.draw();
 		}
+		if (isCourbeParametriqueActive) {
+			switch (curveId) {
+			case(CurveType::bezier):
+				ofSetColor(150, 150, 150);
+				ofSetLineWidth(4.0f);
+				ofDrawLine(pointDeControle1.x, pointDeControle1.y, pointDeControle2.x, pointDeControle2.y);
+				ofDrawLine(pointDeControle3.x, pointDeControle3.y, pointDeControle4.x, pointDeControle4.y);
+
+				ofSetColor(66, 215, 244);
+				ofSetLineWidth(8.0f);
+				lineRenderer.draw();
+
+				ofSetColor(65, 71, 244);
+				ofDrawEllipse(pointDeControle1.x, pointDeControle1.y, rayonPointDeControle, rayonPointDeControle);
+				ofDrawEllipse(pointDeControle2.x, pointDeControle2.y, rayonPointDeControle, rayonPointDeControle);
+				ofDrawEllipse(pointDeControle3.x, pointDeControle3.y, rayonPointDeControle, rayonPointDeControle);
+				ofDrawEllipse(pointDeControle4.x, pointDeControle4.y, rayonPointDeControle, rayonPointDeControle);
+
+				break;
+
+			case(CurveType::hermite):
+				ofSetColor(150, 150, 150);
+				ofSetLineWidth(4.0f);
+				ofDrawLine(pointDeControle1.x, pointDeControle1.y, pointDeControle2.x, pointDeControle2.y);
+				ofDrawLine(pointDeControle3.x, pointDeControle3.y, pointDeControle4.x, pointDeControle4.y);
+
+				ofSetColor(66, 215, 244);
+				ofSetLineWidth(8.0f);
+				lineRenderer.draw();
+
+				ofSetColor(65, 71, 244);
+				ofDrawEllipse(pointDeControle1.x, pointDeControle1.y, rayonPointDeControle, rayonPointDeControle);
+				ofDrawEllipse(pointDeControle2.x, pointDeControle2.y, rayonPointDeControle, rayonPointDeControle);
+				ofDrawEllipse(pointDeControle3.x, pointDeControle3.y, rayonPointDeControle, rayonPointDeControle);
+				ofDrawEllipse(pointDeControle4.x, pointDeControle4.y, rayonPointDeControle, rayonPointDeControle);
+				break;
+
+			case(CurveType::splineDeBezier):
+				ofSetColor(150, 150, 150);
+				ofSetLineWidth(4.0f);
+				ofDrawLine(pointDeControle1.x, pointDeControle1.y, pointDeControle2.x, pointDeControle2.y);
+				ofDrawLine(pointDeControle3.x, pointDeControle3.y, pointDeControle4.x, pointDeControle4.y);
+				ofDrawLine(pointDeControle5.x, pointDeControle5.y, pointDeControle6.x, pointDeControle6.y);
+
+				ofSetColor(66, 215, 244);
+				ofSetLineWidth(8.0f);
+				lineRenderer.draw();
+
+				ofSetColor(65, 71, 244);
+				ofDrawEllipse(pointDeControle1.x, pointDeControle1.y, rayonPointDeControle, rayonPointDeControle);
+				ofDrawEllipse(pointDeControle2.x, pointDeControle2.y, rayonPointDeControle, rayonPointDeControle);
+				ofDrawEllipse(pointDeControle3.x, pointDeControle3.y, rayonPointDeControle, rayonPointDeControle);
+				ofDrawEllipse(pointDeControle4.x, pointDeControle4.y, rayonPointDeControle, rayonPointDeControle);
+				ofDrawEllipse(pointDeControle5.x, pointDeControle5.y, rayonPointDeControle, rayonPointDeControle);
+				ofDrawEllipse(pointDeControle6.x, pointDeControle6.y, rayonPointDeControle, rayonPointDeControle);
+				break;
+
+			default:
+				break;
+			}
+		}
     }
 
-    if (!is2D) {
-        if (isGenererModele3D) {
-            genererModele3D();
-			if (dessierBoite) {
-				genererBoite();
-			}
-        } else if (isGenererTetraedre) {
-            genererTetraedre();
-        } else if (isGenererOctaedre) {
-            genererOctaedre();
-        }
-    }
     if (is_filled) {
         ofFill();
     } else {
@@ -350,6 +581,179 @@ void Renderer::update() {
 			animerMaillage();
 		}
 	}
+	if (!is2D) {
+		ofEnableDepthTest();
+		time_current = ofGetElapsedTimef();
+		time_elapsed = time_current - time_last;
+		time_last = time_current;
+
+		speed_translation = speed_delta * time_elapsed;
+
+		if (is_camera_move_left) {
+			camera->truck(-speed_translation);
+		}
+		if (is_camera_move_right)
+			camera->truck(speed_translation);
+
+		if (is_camera_move_up)
+			camera->boom(speed_translation);
+		if (is_camera_move_down)
+			camera->boom(-speed_translation);
+
+		if (is_camera_move_forward)
+			camera->dolly(-speed_translation);
+		if (is_camera_move_backward)
+			camera->dolly(speed_translation);
+		ofDisableDepthTest();
+
+		if (isSurfaceParametriqueActive) {
+
+			for (index = 0; index <= resolutionSurface; ++index) {
+				bezier(
+					index / (float)resolutionSurface,
+					pointDeControleSurface1.x, pointDeControleSurface1.y, pointDeControleSurface1.z,
+					pointDeControleSurface2.x, pointDeControleSurface2.y, pointDeControleSurface2.z,
+					pointDeControleSurface4.x, pointDeControleSurface4.y, pointDeControleSurface4.z,
+					pointDeControleSurface3.x, pointDeControleSurface3.y, pointDeControleSurface3.z,
+					positionDansCourbeU.x, positionDansCourbeU.y, positionDansCourbeU.z);
+				lineRendererC1[index] = positionDansCourbeU;
+			}
+
+			for (index = 0; index <= resolutionSurface; ++index) {
+				bezier(
+					index / (float)resolutionSurface,
+					pointDeControleSurface5.x, pointDeControleSurface5.y, pointDeControleSurface5.z,
+					pointDeControleSurface6.x, pointDeControleSurface6.y, pointDeControleSurface6.z,
+					pointDeControleSurface8.x, pointDeControleSurface8.y, pointDeControleSurface8.z,
+					pointDeControleSurface7.x, pointDeControleSurface7.y, pointDeControleSurface7.z,
+					positionDansCourbeU.x, positionDansCourbeU.y, positionDansCourbeU.z);
+				lineRendererC2[index] = positionDansCourbeU;
+			}
+
+			for (index = 0; index <= resolutionSurface; ++index) {
+				bezier(
+					index / (float)resolutionSurface,
+					pointDeControleSurface1.x, pointDeControleSurface1.y, pointDeControleSurface1.z,
+					pointDeControleSurface2.x, pointDeControleSurface2.y, pointDeControleSurface2.z,
+					pointDeControleSurface6.x, pointDeControleSurface6.y, pointDeControleSurface6.z,
+					pointDeControleSurface5.x, pointDeControleSurface5.y, pointDeControleSurface5.z,
+					positionDansCourbeV.x, positionDansCourbeV.y, positionDansCourbeV.z);
+				lineRendererC3[index] = positionDansCourbeV;
+			}
+
+			for (index = 0; index <= resolutionSurface; ++index) {
+				bezier(
+					index / (float)resolutionSurface,
+					pointDeControleSurface3.x, pointDeControleSurface3.y, pointDeControleSurface3.z,
+					pointDeControleSurface4.x, pointDeControleSurface4.y, pointDeControleSurface4.z,
+					pointDeControleSurface8.x, pointDeControleSurface8.y, pointDeControleSurface8.z,
+					pointDeControleSurface7.x, pointDeControleSurface7.y, pointDeControleSurface7.z,
+					positionDansCourbeV.x, positionDansCourbeV.y, positionDansCourbeV.z);
+				lineRendererC4[index] = positionDansCourbeV;
+			}
+			float u;
+			float v;
+
+			for (int i = 0; i < resolutionSurface; i++) {
+				u = (float)(i + 1) / (float)resolutionSurface;
+				for (int j = 0; j < resolutionSurface; j++) {
+					v = (float)(j + 1) / (float)resolutionSurface;
+					lerpu = (1 - v)*lineRendererC1[i] + v * lineRendererC2[i];
+					lerpv = (1 - u)*lineRendererC3[j] + u * lineRendererC4[j];
+					blerp = (1 - u)*(1 - v)*lineRendererC1[0] +
+						u * (1 - v)*lineRendererC1[resolutionSurface - 1] +
+						(1 - u)*v*lineRendererC2[0] + u * v*lineRendererC2[resolutionSurface - 1];
+					surfaceCoons = lerpu + lerpv - blerp;
+					lignesDeSurfaceV.at(i)[j] = surfaceCoons;
+				}
+			}
+
+			for (int i = 0; i < resolutionSurface; i++) {
+				v = (float)(i + 1) / (float)resolutionSurface;
+				for (int j = 0; j < resolutionSurface; j++) {
+					u = (float)(j + 1) / (float)resolutionSurface;
+					lerpu = (1 - v)*lineRendererC1[j] + v * lineRendererC2[j];
+					lerpv = (1 - u)*lineRendererC3[i] + u * lineRendererC4[i];
+					blerp = (1 - u)*(1 - v)*lineRendererC1[0] + u * (1 - v)*lineRendererC1[resolutionSurface - 1] + (1 - u)*v*lineRendererC2[0] + u * v*lineRendererC2[resolutionSurface - 1];
+					surfaceCoons = lerpu + lerpv - blerp;
+					lignesDeSurfaceU.at(i)[j] = surfaceCoons;
+				}
+			}
+		}
+	}
+	else {
+		if (isCourbeParametriqueActive) {
+			lineRenderer.clear();
+			switch (curveId) {
+			case CurveType::bezier:
+				for (int i = 0; i <= resolutionCourbe; ++i) {
+					lineRenderer.addVertex(ofPoint());
+				}
+				for (index = 0; index <= resolutionCourbe; ++index) {
+					bezier(
+						index / (float)resolutionCourbe,
+						pointDeControle1.x, pointDeControle1.y, pointDeControle1.z,
+						pointDeControle2.x, pointDeControle2.y, pointDeControle2.z,
+						pointDeControle4.x, pointDeControle4.y, pointDeControle4.z,
+						pointDeControle3.x, pointDeControle3.y, pointDeControle3.z,
+						positionDansCourbe.x, positionDansCourbe.y, positionDansCourbe.z);
+					lineRenderer[index] = positionDansCourbe;
+				}
+
+				break;
+			case CurveType::hermite:
+				for (int i = 0; i <= resolutionCourbe; ++i) {
+					lineRenderer.addVertex(ofPoint());
+				}
+				for (index = 0; index <= resolutionCourbe; ++index)
+				{
+					tangente1 = pointDeControle2 - pointDeControle1;
+					tangente2 = pointDeControle3 - pointDeControle4;
+
+					hermite(
+						index / (float)resolutionCourbe,
+						pointDeControle1.x, pointDeControle1.y, pointDeControle1.z,
+						tangente1.x, tangente1.y, tangente1.z,
+						tangente2.x, tangente2.y, tangente2.z,
+						pointDeControle4.x, pointDeControle4.y, pointDeControle4.z,
+						positionDansCourbe.x, positionDansCourbe.y, positionDansCourbe.z);
+
+					lineRenderer[index] = positionDansCourbe;
+				}
+				break;
+			case CurveType::splineDeBezier:
+				for (int i = 0; i <= resolutionCourbe * 2; ++i) {
+					lineRenderer.addVertex(ofPoint());
+				}
+				for (index = 0; index <= resolutionCourbe; ++index) {
+					bezier(
+						index / (float)resolutionCourbe,
+						pointDeControle1.x, pointDeControle1.y, pointDeControle1.z,
+						pointDeControle2.x, pointDeControle2.y, pointDeControle2.z,
+						pointDeControle4.x, pointDeControle4.y, pointDeControle4.z,
+						pointDeControle3.x, pointDeControle3.y, pointDeControle3.z,
+						positionDansCourbe.x, positionDansCourbe.y, positionDansCourbe.z);
+
+					lineRenderer[index] = positionDansCourbe;
+				}
+				for (index = 0; index <= resolutionCourbe; ++index) {
+					bezier(
+						index / (float)resolutionCourbe,
+						pointDeControle3.x, pointDeControle3.y, pointDeControle3.z,
+						pointDeControle4.x, pointDeControle4.y, pointDeControle4.z,
+						pointDeControle6.x, pointDeControle6.y, pointDeControle6.z,
+						pointDeControle5.x, pointDeControle5.y, pointDeControle5.z,
+						positionDansCourbe.x, positionDansCourbe.y, positionDansCourbe.z);
+
+					lineRenderer[resolutionCourbe + index] = positionDansCourbe;
+				}
+				break;
+
+			default:
+				break;
+			}
+		}
+	}
 }
 
 void Renderer::create_preview() {
@@ -362,12 +766,14 @@ void Renderer::create_preview() {
             preview_primitive = line.clone();
             break;
         }
-        case DrawPrimitive::rectangle: {
+	
+	
+     /**case DrawPrimitive::rectangle: {
             Rectangle rectangle = Rectangle(currentColor, mouse_press_x, mouse_press_y,
                                             mouse_current_x, mouse_current_y, current_thickness);
             preview_primitive = rectangle.clone();
             break;
-        }
+        }**/
         case DrawPrimitive::circle: {
             Circle circle = Circle(currentColor, mouse_press_x, mouse_press_y,
                                    mouse_current_x, mouse_current_y, current_thickness, is_filled);
@@ -761,10 +1167,10 @@ void Renderer::genererModele3D() {
     //On ajuste l'angle de rotation selon les sliders de rotation
     modele.setRotation(0, sliderRotation3DX, 1, 0, 0);
     modele.setRotation(1, sliderRotation3DY, 0, 1, 0);
-    modele.setRotation(2, sliderRotation3DZ, 0, 0, 1);
+	modele.setRotation(2, sliderRotation3DZ + 180, 0, 0, 1);
 
-    modele.setPosition(screenWidth / 2, screenHeight*0.75, 0);
-    modele.draw(OF_MESH_FILL);
+	modele.setPosition(0, 0, -offset_scene);
+	modele.draw(OF_MESH_FILL);
     modele.drawFaces();
 
     ofDisableDepthTest();
@@ -775,9 +1181,9 @@ void Renderer::genererTetraedre() {
 	ofFill();
 	ofSetColor(currentColor);
 	float taille = screenHeight/4;
-	float origineX = screenWidth / 2;
-	float origineY = screenHeight/2;
-	float origineZ = 0;
+	float origineX = 0;
+	float origineY = 0;
+	float origineZ = -offset_scene;
 	
 
 	//origine
@@ -907,9 +1313,9 @@ void Renderer::genererOctaedre() {
 	ofFill();
 	ofSetColor(currentColor);
 	float taille = screenHeight / 4;
-	float origineX = screenWidth / 2;
-	float origineY = screenHeight / 2;
-	float origineZ = 0;
+	float origineX = 0;
+	float origineY = 0;
+	float origineZ = -offset_scene;
 
 	//origine
 	ofVec3f origineOctaedre = ofVec3f(origineX, origineY, origineZ);
@@ -1467,6 +1873,327 @@ void Renderer::proceduralToggled(bool &procedural) {
 
 void Renderer::fillingModeSwitched(bool &fillingMode) {
     is_filled = fillingMode;
+}
+void Renderer::resetCamera()
+{
+	// initialisation des variables
+
+	offset_scene = 200.0f;
+	offset_camera = offset_scene * 3.5f * -1.0f;
+
+	// position initiale de chaque caméra
+	camera_front.setPosition(0, 0, -offset_camera);
+	camera_back.setPosition(0, 0, offset_camera);
+	camera_left.setPosition(-offset_camera, 0, 0);
+	camera_right.setPosition(offset_camera, 0, 0);
+	camera_top.setPosition(0, offset_camera, 0);
+	camera_down.setPosition(0, -offset_camera, 0);
+
+	// orientation de chaque caméra
+	camera_front.lookAt(camera_target);
+	camera_back.lookAt(camera_target);
+	camera_left.lookAt(camera_target);
+	camera_right.lookAt(camera_target);
+	camera_top.lookAt(camera_target, ofVec3f(1, 0, 0));
+	camera_down.lookAt(camera_target, ofVec3f(1, 0, 0));
+
+	// caméra par défaut
+	camera_active = Camera::front;
+
+	ofLog() << "<reset>";
+}
+
+void Renderer::setup_camera()
+{
+	switch (camera_active)
+	{
+	case Camera::front:
+		camera = &camera_front;
+		break;
+
+	case Camera::back:
+		camera = &camera_back;
+		break;
+
+	case Camera::left:
+		camera = &camera_left;
+		break;
+
+	case Camera::right:
+		camera = &camera_right;
+		break;
+
+	case Camera::top:
+		camera = &camera_top;
+		break;
+
+	case Camera::down:
+		camera = &camera_down;
+		break;
+
+	default:
+		break;
+	}
+
+	camera_position = camera->getPosition();
+
+	camera_orientation = camera->getOrientationQuat();
+
+	if (toggleProjectionPerspective)
+	{
+		camera->disableOrtho();
+	}
+	else
+	{
+		camera->enableOrtho();
+	}
+
+	camera->setPosition(camera_position);
+	camera->setOrientation(camera_orientation);
+}
+
+void Renderer::toggleFrontCameraPressed(bool &front) {
+	if (front) {
+		toggleBackCamera.set(false);
+		toggleLeftCamera.set(false);
+		toggleRightCamera.set(false);
+		toggleTopCamera.set(false);
+		toggleBottomCamera.set(false);
+
+		camera_active = Camera::front;
+		setup_camera();
+	}
+}
+void Renderer::toggleBackCameraPressed(bool &back) {
+	if (back) {
+		toggleFrontCamera.set(false);
+		toggleLeftCamera.set(false);
+		toggleRightCamera.set(false);
+		toggleTopCamera.set(false);
+		toggleBottomCamera.set(false);
+
+		camera_active = Camera::back;
+		setup_camera();
+	}
+}
+void Renderer::toggleLeftCameraPressed(bool &left) {
+	if (left) {
+		toggleBackCamera.set(false);
+		toggleFrontCamera.set(false);
+		toggleRightCamera.set(false);
+		toggleTopCamera.set(false);
+		toggleBottomCamera.set(false);
+
+		camera_active = Camera::right;
+		setup_camera();
+	}
+}
+void Renderer::toggleRightCameraPressed(bool &right) {
+	if (right) {
+		toggleBackCamera.set(false);
+		toggleLeftCamera.set(false);
+		toggleFrontCamera.set(false);
+		toggleTopCamera.set(false);
+		toggleBottomCamera.set(false);
+
+		camera_active = Camera::left;
+		setup_camera();
+	}
+}
+void Renderer::toggleTopCameraPressed(bool &top) {
+	if (top) {
+		toggleBackCamera.set(false);
+		toggleLeftCamera.set(false);
+		toggleRightCamera.set(false);
+		toggleFrontCamera.set(false);
+		toggleBottomCamera.set(false);
+
+		camera_active = Camera::top;
+		setup_camera();
+	}
+}
+void Renderer::toggleBottomCameraPressed(bool &bottom) {
+	if (bottom) {
+		toggleBackCamera.set(false);
+		toggleLeftCamera.set(false);
+		toggleRightCamera.set(false);
+		toggleTopCamera.set(false);
+		toggleFrontCamera.set(false);
+
+		camera_active = Camera::down;
+		setup_camera();
+	}
+}
+
+
+void Renderer::toggleProjectionPerspectivePressed(bool &perspective) {
+	if (perspective) {
+		toggleProjectionOrthogonale.set(false);
+		camera->disableOrtho();
+	}
+}
+void Renderer::toggleProjectionOrthogonalePressed(bool &orthogonale) {
+	if (orthogonale) {
+		toggleProjectionPerspective.set(false);
+		camera->enableOrtho();
+	}
+}
+
+
+void Renderer::toggleCourbeDeBezierPressed(bool &bezier) {
+	if (bezier) {
+		toggleCourbeDeHermite.set(false);
+		toggleCourbeSplineDeBezier.set(false);
+		isCourbeParametriqueActive = true;
+		curveId = CurveType::bezier;
+		resetCourbeParametrique();
+	}
+	else {
+		isCourbeParametriqueActive = false;
+	}
+}
+
+void Renderer::toggleCourbeDeHermitePressed(bool &hermite) {
+	if (hermite) {
+		toggleCourbeDeBezier.set(false);
+		toggleCourbeSplineDeBezier.set(false);
+		isCourbeParametriqueActive = true;
+		curveId = CurveType::hermite;
+		resetCourbeParametrique();
+	}
+	else {
+		isCourbeParametriqueActive = false;
+	}
+}
+
+void Renderer::toggleCourbeSplineDeBezierPressed(bool &splineDeBezier) {
+	if (splineDeBezier) {
+		toggleCourbeDeBezier.set(false);
+		toggleCourbeDeHermite.set(false);
+		isCourbeParametriqueActive = true;
+		curveId = CurveType::splineDeBezier;
+		resetCourbeParametrique();
+	}
+	else {
+		isCourbeParametriqueActive = false;
+	}
+}
+
+void Renderer::resetCourbeParametrique() {
+	float w_1_4 = screenWidth / 4.0f;
+	float w_1_2 = screenWidth / 2.0f;
+	float w_3_4 = screenWidth * 3.0f / 4.0f;
+	float h_2_5 = screenHeight * 2.0f / 5.0f;
+	float h_3_5 = screenHeight * 3.0f / 5.0f;
+
+	switch (curveId) {
+	case CurveType::bezier:
+		pointDeControle1 = { w_1_4, h_3_5, 0 };
+		pointDeControle2 = { w_1_4, h_2_5, 0 };
+		pointDeControle3 = { w_3_4, h_3_5, 0 };
+		pointDeControle4 = { w_3_4, h_2_5, 0 };
+		break;
+
+	case CurveType::hermite:
+		pointDeControle1 = { w_1_4, h_3_5, 0 };
+		pointDeControle2 = { w_1_4, h_2_5, 0 };
+		pointDeControle4 = { w_3_4, h_3_5, 0 };
+		pointDeControle3 = { w_3_4, h_2_5, 0 };
+		break;
+
+	case CurveType::splineDeBezier:
+		pointDeControle1 = { w_1_4, h_3_5, 0 };
+		pointDeControle2 = { w_1_4, h_2_5, 0 };
+		pointDeControle3 = { w_1_2, h_3_5, 0 };
+		pointDeControle4 = { w_1_2, h_2_5, 0 };
+		pointDeControle5 = { w_3_4, h_3_5, 0 };
+		pointDeControle6 = { w_3_4, h_2_5, 0 };
+		break;
+
+	default:
+		break;
+	}
+	pointDeControleSelectionne = &pointDeControle2;
+}
+
+void Renderer::toggleSurfaceDeCoonsPressed(bool &coons) {
+	if (coons) {
+		isSurfaceParametriqueActive = true;
+		resetSurfaceParametrique();
+	}
+	else {
+		isSurfaceParametriqueActive = false;
+	}
+}
+
+void Renderer::resetSurfaceParametrique() {
+	float w_1_4 = (screenWidth / 4.0f) - screenWidth / 2;
+	float w_3_4 = (screenWidth * 3.0f / 4.0f) - screenWidth / 2;
+	float h_2_5 = (screenHeight * 2.0f / 5.0f) - screenHeight / 2;
+	float h_3_5 = (screenHeight * 3.0f / 5.0f) - screenHeight / 2;
+	float profondeur = 200;
+
+	pointDeControleSurface1 = { w_1_4, h_3_5, 0 };
+	pointDeControleSurface2 = { w_1_4, h_2_5, 0 };
+	pointDeControleSurface3 = { w_3_4, h_3_5, 0 };
+	pointDeControleSurface4 = { w_3_4, h_2_5, 0 };
+	pointDeControleSurface5 = { w_1_4, h_3_5, profondeur };
+	pointDeControleSurface6 = { w_1_4, h_2_5, profondeur };
+	pointDeControleSurface7 = { w_3_4, h_3_5, profondeur };
+	pointDeControleSurface8 = { w_3_4, h_2_5, profondeur };
+
+	pointDeControleSelectionneSurface = &pointDeControleSurface2;
+	lignesDeSurfaceV.clear();
+	for (int i = 0; i < resolutionSurface; i++) {
+		lignesDeSurfaceV.push_back(ofPolyline());
+		for (int j = 0; j < resolutionSurface; ++j) {
+			lignesDeSurfaceV.at(i).addVertex(ofPoint());
+		}
+	}
+	lignesDeSurfaceU.clear();
+	for (int i = 0; i < resolutionSurface; i++) {
+		lignesDeSurfaceU.push_back(ofPolyline());
+		for (int j = 0; j < resolutionSurface; ++j) {
+			lignesDeSurfaceU.at(i).addVertex(ofPoint());
+		}
+	}
+}
+
+void Renderer::toogleTriangulationPressed(bool &triangulation) {
+	if (triangulation) {
+		isTriangulation = true;
+	}
+	else {
+		isTriangulation = false;
+	}
+}
+
+void Renderer::toggleActiverBrumePressed(bool &brume) {
+	if (brume) {
+		brumeActiver = true;
+	}
+	else {
+		brumeActiver = false;
+		glDisable(GL_FOG);
+	}
+}
+
+
+void Renderer::activerBrume() {
+
+	glEnable(GL_LIGHTING);
+
+	ofColor blanc = ofColor(1, 1, 1, 1.0f);
+	GLfloat couleursPourBlanc[4] = { blanc.r, blanc.g, blanc.b, blanc.a };
+	glFogi(GL_FOG_MODE, GL_LINEAR);
+	glFogfv(GL_FOG_COLOR, couleursPourBlanc);
+	glFogf(GL_FOG_DENSITY, 1);
+	glHint(GL_FOG_HINT, GL_DONT_CARE);
+	glFogf(GL_FOG_START, camera->getPosition().z + 500);
+	glFogf(GL_FOG_END, camera->getPosition().z + -800);
+	glFogi(GL_FOG_COORD_SRC, GL_FOG_COORDINATE);
+
+	glEnable(GL_FOG);
 }
 
 Renderer::~Renderer() {
