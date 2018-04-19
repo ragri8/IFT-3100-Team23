@@ -138,7 +138,8 @@ void Application::mouseExited(int x, int y) {
 
 //--------------------------------------------------------------
 void Application::windowResized(int w, int h){
-
+	renderer.screenWidth = ofGetWidth();
+	renderer.screenHeight = ofGetHeight();
 }
 
 //--------------------------------------------------------------

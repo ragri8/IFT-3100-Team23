@@ -225,50 +225,48 @@ void Renderer::draw() {
     //Color picker
     if (rgbMode){
         currentColor = ofColor(redOrHue, greenOrSaturation, blueOrBrightness, alpha);
-    }
-	else {
+    } else {
 		currentColor = ofColor::fromHsb(redOrHue, greenOrSaturation, blueOrBrightness, alpha);
 	}
-    
+
+    if (compositionAdd && is_texture1_loaded && is_texture2_loaded) {
+        //if (texture1.getWidth() > 0 && texture1.getHeight() > 0 && texture2.getWidth() > 0 && texture2.getHeight() > 0)
+        //	ofSetWindowShape(max(texture1.getWidth(), texture2.getWidth()), max(texture1.getHeight(), texture2.getHeight()));
+        //ofEnableBlendMode(OF_BLENDMODE_ADD);
+        texture1.draw(guiMenu.getWidth(), 0, texture1.getWidth(), texture1.getHeight());
+        ofSetColor(255, 255, 255, 150);
+        texture2.draw(guiMenu.getWidth(), 0, texture2.getWidth(), texture2.getHeight());
+        ofSetColor(255, 255, 255, 255);
+        //ofDisableBlendMode();
+    }
+    else if (aiguiser || detectionBordure || bosseler || flou) {
+        filteredImage.allocate(currentImage.getWidth(), currentImage.getHeight(), OF_IMAGE_COLOR);
+        //filter();
+        filteredImage.draw(guiMenu.getWidth(), 0, currentImage.getWidth(), currentImage.getHeight());
+    }
+    else if (ternaryTree || binaryTree) {
+        ofSetBackgroundColor(255, 255, 255, 255);
+        ofSetColor(0, 0, 0, 255);
+        ofSetLineWidth(2);
+
+        if (ternaryTree) {
+            ofPushMatrix();
+            ofTranslate(ofGetWidth() / 2, ofGetHeight() / 2);
+            drawTernaryTree(branchLength);
+            ofPopMatrix();
+        }
+        else if (binaryTree) {
+            ofPushMatrix();
+            ofTranslate(ofGetWidth() / 2, ofGetHeight() / 2);
+            drawBinaryTree(branchLength);
+            ofPopMatrix();
+        }
+    }
+    else if(toggleAfficherImage) {
+        currentImage.draw(guiMenu.getWidth(), 0, currentImage.getWidth(), currentImage.getHeight());
+    }
     model2D.draw();
     if (is_menu_displayed) {
-
-		if (compositionAdd && is_texture1_loaded && is_texture2_loaded) {
-		//if (texture1.getWidth() > 0 && texture1.getHeight() > 0 && texture2.getWidth() > 0 && texture2.getHeight() > 0)
-		//	ofSetWindowShape(max(texture1.getWidth(), texture2.getWidth()), max(texture1.getHeight(), texture2.getHeight()));
-		//ofEnableBlendMode(OF_BLENDMODE_ADD);
-		texture1.draw(guiMenu.getWidth(), 0, texture1.getWidth(), texture1.getHeight());
-		ofSetColor(255, 255, 255, 150);
-		texture2.draw(guiMenu.getWidth(), 0, texture2.getWidth(), texture2.getHeight());
-		ofSetColor(255, 255, 255, 255);
-		//ofDisableBlendMode();
-		}
-		else if (aiguiser || detectionBordure || bosseler || flou) {
-			filteredImage.allocate(currentImage.getWidth(), currentImage.getHeight(), OF_IMAGE_COLOR);
-			filter();
-			filteredImage.draw(guiMenu.getWidth(), 0, currentImage.getWidth(), currentImage.getHeight());
-		}
-		else if (ternaryTree || binaryTree) {
-			ofSetBackgroundColor(255, 255, 255, 255);
-			ofSetColor(0, 0, 0, 255);
-			ofSetLineWidth(2);
-	
-			if (ternaryTree) {
-				ofPushMatrix();
-				ofTranslate(ofGetWidth() / 2, ofGetHeight() / 2);
-				drawTernaryTree(branchLength);
-				ofPopMatrix();
-			}
-			else if (binaryTree) {
-				ofPushMatrix();
-				ofTranslate(ofGetWidth() / 2, ofGetHeight() / 2);
-				drawBinaryTree(branchLength);
-				ofPopMatrix();
-			}
-		}
-		else if(toggleAfficherImage) {
-			currentImage.draw(guiMenu.getWidth(), 0, currentImage.getWidth(), currentImage.getHeight());
-		}
 
         //GUI et affichage
         guiMenu.setPosition(0, 0);
@@ -293,23 +291,23 @@ void Renderer::draw() {
 		ofSetColor(0, 0, 0);
 		ofDrawRectangle(0, colorPickerGUI.getPosition().y + colorPickerGUI.getHeight(), colorPickerGUI.getWidth(), 20);
 		ofFill();
-        ofSetColor(currentColor);
 
-		// definir position de l'interface graphique de composition de texture
-		if (imageComposition) {
-			textureCompositionGUI.setPosition(0, colorPickerGUI.getPosition().y + colorPickerGUI.getHeight() + 20);
-			textureCompositionGUI.draw();
-		}
-		// definir position de l'interface graphique de filtrage par convolution
-		if (convolutionFilter) {
-			filtrageConvolutionGUI.setPosition(0, colorPickerGUI.getPosition().y + colorPickerGUI.getHeight() + 20);
-			filtrageConvolutionGUI.draw();
-		}
-		// definir position de l'interface graphique de texture procédural
-		if (proceduralTexture) {
-			textureProceduralGUI.setPosition(0, colorPickerGUI.getPosition().y + colorPickerGUI.getHeight() + 20);
-			textureProceduralGUI.draw();
-		}
+
+        // definir position de l'interface graphique de composition de texture
+        if (imageComposition) {
+            textureCompositionGUI.setPosition(0, colorPickerGUI.getPosition().y + colorPickerGUI.getHeight() + 20);
+            textureCompositionGUI.draw();
+        }
+        // definir position de l'interface graphique de filtrage par convolution
+        if (convolutionFilter) {
+            filtrageConvolutionGUI.setPosition(0, colorPickerGUI.getPosition().y + colorPickerGUI.getHeight() + 20);
+            filtrageConvolutionGUI.draw();
+        }
+        // definir position de l'interface graphique de texture procédural
+        if (proceduralTexture) {
+            textureProceduralGUI.setPosition(0, colorPickerGUI.getPosition().y + colorPickerGUI.getHeight() + 20);
+            textureProceduralGUI.draw();
+        }
     }
 
     if (!is2D) {
@@ -342,6 +340,7 @@ void Renderer::draw() {
         preview_primitive->draw();
     }
     dessinerCurseur(mouse_current_x, mouse_current_y);
+    ofSetColor(255, 255, 255);
 }
 
 void Renderer::update() {
@@ -371,7 +370,7 @@ void Renderer::create_preview() {
         case DrawPrimitive::circle: {
             Circle circle = Circle(currentColor, mouse_press_x, mouse_press_y,
                                    mouse_current_x, mouse_current_y, current_thickness, is_filled);
-            preview_primitive = circle.clone();;
+            preview_primitive = circle.clone();
             break;
         }
         case DrawPrimitive::triangle: {
@@ -1204,6 +1203,7 @@ void Renderer::aiguiserToggled(bool & aiguiser) {
 		flou.set(false);
 		kernel_type = ConvolutionKernel::sharpen;
 		kernel_name = "aiguiser";
+        filter();
 	}
 }
 
@@ -1214,6 +1214,7 @@ void Renderer::detectionBordureToggled(bool & detectionBordure) {
 		flou.set(false);
 		kernel_type = ConvolutionKernel::edge_detect;
 		kernel_name = "détection de bordure";
+        filter();
 	}
 }
 
@@ -1224,6 +1225,7 @@ void Renderer::bosselerToggled(bool & bosseler) {
 		flou.set(false);
 		kernel_type = ConvolutionKernel::emboss;
 		kernel_name = "bosseler";
+        filter();
 	}
 }
 
@@ -1234,6 +1236,7 @@ void Renderer::flouToggled(bool & flou) {
 		bosseler.set(false);
 		kernel_type = ConvolutionKernel::blur;
 		kernel_name = "flou";
+        filter();
 	}
 }
 
@@ -1367,7 +1370,7 @@ void Renderer::filter()
 	// écrire les pixels dans l'image de destination
 	filteredImage.setFromPixels(pixel_array_dst);
 
-	ofLog() << "<convolution filter done>";
+	//ofLog() << "<convolution filter done>";
 }
 
 

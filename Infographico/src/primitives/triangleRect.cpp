@@ -9,7 +9,7 @@ TriangleRect::TriangleRect(const ofColor& reqColor, const float& reqX1, const fl
         Primitive(reqColor, reqX1, reqY1, reqThickness), x2(reqX1), y2(reqY2), x3(reqX2), y3(reqY1),
         is_filled(filled) {
     primitive_nbr++;
-    ofLog() << "<New primitive: (" << primitive_nbr << ") >";
+    //ofLog() << "<New primitive: (" << primitive_nbr << ") >";
 }
 
 void TriangleRect::draw() const {
@@ -89,11 +89,11 @@ bool TriangleRect::operator==(const Primitive& reqPrimitive) const {
 
 Primitive* TriangleRect::clone() const {
     primitive_nbr++;
-    ofLog() << "<New primitive: (" << primitive_nbr << ") >";
+    //ofLog() << "<New primitive: (" << primitive_nbr << ") >";
     return new TriangleRect(*this);
 }
 
 TriangleRect::~TriangleRect() {
     primitive_nbr--;
-    ofLog() << "<Deletion of primitive: (" << primitive_nbr << ") >";
+    //ofLog() << "<Deletion of primitive: (" << primitive_nbr << ") >";
 }

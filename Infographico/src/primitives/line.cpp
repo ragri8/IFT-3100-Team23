@@ -12,7 +12,7 @@ Line::Line(const ofColor& reqColor, const float& reqX1, const float& reqY1, cons
         swap(origin_y, y2);
     }
     primitive_nbr++;
-    ofLog() << "<New primitive: (" << primitive_nbr << ") >";
+    //ofLog() << "<New primitive: (" << primitive_nbr << ") >";
 }
 
 void Line::draw() const {
@@ -86,11 +86,11 @@ bool Line::operator==(const Primitive& reqPrimitive) const {
 
 Primitive* Line::clone() const {
     primitive_nbr++;
-    ofLog() << "<New primitive: (" << primitive_nbr << ") >";
+    //ofLog() << "<New primitive: (" << primitive_nbr << ") >";
     return new Line(*this);
 }
 
 Line::~Line() {
     primitive_nbr--;
-    ofLog() << "<Deletion of primitive: (" << primitive_nbr << ") >";
+    //ofLog() << "<Deletion of primitive: (" << primitive_nbr << ") >";
 }

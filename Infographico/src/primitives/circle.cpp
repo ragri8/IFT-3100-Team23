@@ -9,7 +9,7 @@ Circle::Circle(const ofColor& reqColor, const float& reqX1, const float& reqY1, 
         Primitive(reqColor, reqX1, reqY1, reqThickness), is_filled(filled) {
     r = (float)sqrt(pow(reqX2 - reqX1, 2) + pow(reqY2 - reqY1, 2));
     primitive_nbr++;
-    ofLog() << "<New primitive: (" << primitive_nbr << ") >";
+    //ofLog() << "<New primitive: (" << primitive_nbr << ") >";
 }
 
 void Circle::draw() const {
@@ -67,11 +67,11 @@ bool Circle::operator==(const Primitive& reqPrimitive) const {
 
 Primitive* Circle::clone() const {
     primitive_nbr++;
-    ofLog() << "<New primitive: (" << primitive_nbr << ") >";
+    //ofLog() << "<New primitive: (" << primitive_nbr << ") >";
     return new Circle(*this);
 }
 
 Circle::~Circle() {
     primitive_nbr--;
-    ofLog() << "<Deletion of primitive: (" << primitive_nbr << ") >";
+    //ofLog() << "<Deletion of primitive: (" << primitive_nbr << ") >";
 }

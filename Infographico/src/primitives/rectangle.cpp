@@ -14,7 +14,7 @@ Rectangle::Rectangle(const ofColor& reqColor, const float& reqX1, const float& r
         swap(origin_y, y2);
     }
     primitive_nbr++;
-    ofLog() << "<New primitive: (" << primitive_nbr << ") >";
+    //ofLog() << "<New primitive: (" << primitive_nbr << ") >";
 }
 
 void Rectangle::draw() const {
@@ -84,11 +84,11 @@ bool Rectangle::operator==(const Primitive& reqPrimitive) const {
 
 Primitive* Rectangle::clone() const {
     primitive_nbr++;
-    ofLog() << "<New primitive: (" << primitive_nbr << ") >";
+    //ofLog() << "<New primitive: (" << primitive_nbr << ") >";
     return new Rectangle(*this);
 }
 
 Rectangle::~Rectangle() {
     primitive_nbr--;
-    ofLog() << "<Deletion of primitive: (" << primitive_nbr << ") >";
+    //ofLog() << "<Deletion of primitive: (" << primitive_nbr << ") >";
 }

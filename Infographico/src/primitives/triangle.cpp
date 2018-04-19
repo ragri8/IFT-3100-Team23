@@ -9,7 +9,7 @@ Triangle::Triangle(const ofColor& reqColor, const float& reqX1, const float& req
         Primitive(reqColor, reqX1, reqY1, reqThickness), x3(reqX2), y2(reqY2), y3(reqY1), is_filled(filled) {
     x2 = (reqX1 + reqX2) / 2.0f;
     primitive_nbr++;
-    ofLog() << "<New primitive: (" << primitive_nbr << ") >";
+    //ofLog() << "<New primitive: (" << primitive_nbr << ") >";
 }
 
 void Triangle::draw() const {
@@ -85,11 +85,11 @@ bool Triangle::operator==(const Primitive& reqPrimitive) const {
 
 Primitive* Triangle::clone() const {
     primitive_nbr++;
-    ofLog() << "<New primitive: (" << primitive_nbr << ") >";
+    //ofLog() << "<New primitive: (" << primitive_nbr << ") >";
     return new Triangle(*this);
 }
 
 Triangle::~Triangle() {
     primitive_nbr--;
-    ofLog() << "<Deletion of primitive: (" << primitive_nbr << ") >";
+    //ofLog() << "<Deletion of primitive: (" << primitive_nbr << ") >";
 }

@@ -21,7 +21,7 @@ std::string Model2D::getName() const {
 }
 
 void Model2D::draw() const {
-    for (auto iter = v_primitives.rbegin(); iter != v_primitives.rend(); iter++) {
+    for (auto iter = v_primitives.begin(); iter != v_primitives.end(); iter++) {
         (*iter)->draw();
     }
 }
