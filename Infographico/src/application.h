@@ -10,6 +10,18 @@ public:
 	float time_last;
 	float time_elapsed;
 
+	bool is_key_press_plus;
+	bool is_key_press_moins;
+	bool is_key_press_left;
+	bool is_key_press_right;
+
+	bool is_key_press_a;
+	bool is_key_press_d;
+	bool is_key_press_down;
+	bool is_key_press_up;
+	bool is_key_press_s;
+	bool is_key_press_w;
+
 	Renderer renderer;
 
 
