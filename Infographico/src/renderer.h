@@ -72,6 +72,8 @@ enum class Camera { front, back, left, right, top, down, free, orbit };
 //courbe parametrique
 enum class CurveType { bezier, hermite, splineDeBezier };
 
+enum class ShaderType {color_fill, lambert, gouraud, phong, blinn_phong, custom_1};
+
 inline void bezier(float t,
 	float p1x, float p1y, float p1z,
 	float p2x, float p2y, float p2z,
@@ -341,6 +343,21 @@ public:
 	float offset_camera;
 	float offset_scene;
 
+    ShaderType shader_active;
+
+    ofShader shader_color_fill;
+    ofShader shader_lambert;
+    ofShader shader_gouraud;
+    ofShader shader_phong;
+    ofShader shader_blinn_phong;
+    ofShader shader_multiple_light_blinn_phong;
+
+    ofShader* shader;
+
+    ofMaterial material_basic;
+
+    string shader_name;
+
 	float speed_delta;
 	float speed_translation;
 
@@ -479,6 +496,7 @@ public:
     void draw2D();
     void draw3DCam();
 	void update();
+    void updateShader();
 
 	void create_preview();
 	void preview_form();

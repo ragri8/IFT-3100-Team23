@@ -2,6 +2,7 @@
 
 void Renderer::setup() {
     ofSetFrameRate(60);
+    ofSetBackgroundColor(0);
 
     screenWidth = ofGetWidth();
     screenHeight = ofGetHeight();
@@ -33,9 +34,11 @@ void Renderer::setup() {
     //Modele 3D
     isGenererModele3D = false;
     //eclairage
+    light.setPointLight();
     ofEnableLighting();
-    light.setAmbientColor(ofColor(0, 255, 0));
-    light.setDiffuseColor(ofColor(255, 255, 255));
+    light.setAmbientColor(ofColor(20, 20, 20));
+    light.setDiffuseColor(ofColor(100, 100, 100));
+    light.setSpecularColor(ofColor(100, 100, 100));
     light.setPosition(0.0f, 0.0f, 1000.0f);
     light.enable();
 
@@ -241,6 +244,41 @@ void Renderer::setup() {
 	is_camera_move_forward = false;
 	is_camera_move_backward = false;
 
+    // Shaders
+    shader_color_fill.load(
+            "shader/color_fill_330_vs.glsl",
+            "shader/color_fill_330_fs.glsl");
+
+    shader_lambert.load(
+            "shader/lambert_330_vs.glsl",
+            "shader/lambert_330_fs.glsl");
+
+    shader_gouraud.load(
+            "shader/gouraud_330_vs.glsl",
+            "shader/gouraud_330_fs.glsl");
+
+    shader_phong.load(
+            "shader/phong_330_vs.glsl",
+            "shader/phong_330_fs.glsl");
+
+    shader_blinn_phong.load(
+            "shader/blinn_phong_330_vs.glsl",
+            "shader/blinn_phong_330_fs.glsl");
+
+    shader_multiple_light_blinn_phong.load(
+            "shader/blinn_phong_330_vs.glsl",
+            "shader/custom_blinn_phong_330_fs.glsl");
+
+    shader_active = ShaderType::blinn_phong;
+
+    shader = &shader_blinn_phong;
+
+    // shininess is a value between 0 - 128, 128 being the most shiny //
+    material_basic.setShininess( 60 );
+    // the light highlight of the material //
+    material_basic.setSpecularColor(ofColor(255, 20, 20));
+    material_basic.setDiffuseColor(ofColor(220, 100, 10));
+    material_basic.setAmbientColor(ofColor(127, 105, 0));
 
 	ofEnableDepthTest();
 	resetCamera();
@@ -331,7 +369,7 @@ void Renderer::setup() {
 }
 
 void Renderer::draw() {
-    ofClear(255, 255, 255);
+    ofClear(0, 0, 0);
     current_thickness = sliderEpaisseurLigneContour;
     //Color picker
     if (rgbMode){
@@ -424,8 +462,8 @@ void Renderer::draw2D() {
         filteredImage.draw(guiMenu.getWidth(), 0, currentImage.getWidth(), currentImage.getHeight());
     }
     else if (ternaryTree || binaryTree) {
-        ofSetBackgroundColor(255, 255, 255, 255);
-        ofSetColor(0, 0, 0, 255);
+        //ofSetBackgroundColor(255, 255, 255, 255);
+        ofSetColor(255, 255, 255, 255);
         ofSetLineWidth(2);
 
         if (ternaryTree) {
@@ -511,6 +549,7 @@ void Renderer::draw2D() {
 
 void Renderer::draw3DCam() {
     //rendu 3D de la scène avec la caméra
+    ofEnableLighting();
     camera->begin();
 
     if (camera_active != Camera::front)
@@ -579,6 +618,7 @@ void Renderer::draw3DCam() {
         genererOctaedre();
     }
     camera->end();
+    ofDisableLighting();
 }
 
 void Renderer::update() {
@@ -759,6 +799,85 @@ void Renderer::update() {
 			}
 		}
 	}
+    updateShader();
+}
+
+void Renderer::updateShader() {
+    light.setAmbientColor(ofColor(20, 20, 20));
+    light.setDiffuseColor(ofColor(100, 100, 100));
+    light.setSpecularColor(ofColor(100, 100, 100));
+
+    light.setGlobalPosition(ofGetWidth()/2, ofGetHeight()/2, 500.0f);
+
+    switch (shader_active) {
+        case ShaderType::color_fill:
+            shader_name = "Color Fill";
+            shader = &shader_color_fill;
+            shader->begin();
+            shader->setUniform3f("color", 1.0f, 1.0f, 0.0f);
+            shader->end();
+            break;
+
+        case ShaderType::lambert:
+            shader_name = "Lambert";
+            shader = &shader_lambert;
+            shader->begin();
+            shader->setUniform3f("colorAmbient",  0.1f, 0.1f, 0.1f);
+            shader->setUniform3f("colorDiffuse",  0.6f, 0.6f, 0.6f);
+            shader->end();
+            break;
+
+        case ShaderType::gouraud:
+            shader_name = "Gouraud";
+            shader = &shader_gouraud;
+            shader->begin();
+            shader->setUniform3f("colorAmbient",  0.1f, 0.1f, 0.1f);
+            shader->setUniform3f("colorDiffuse",  0.6f, 0.6f, 0.0f);
+            shader->setUniform3f("colorSpecular", 1.0f, 1.0f, 0.0f);
+            shader->setUniform1f("brightness", 10.0f);
+            shader->end();
+            break;
+
+        case ShaderType::phong:
+            shader_name = "Phong";
+            shader = &shader_phong;
+            shader->begin();
+            shader->setUniform3f("colorAmbient",  0.1f, 0.1f, 0.1f);
+            shader->setUniform3f("colorDiffuse",  0.6f, 0.0f, 0.6f);
+            shader->setUniform3f("colorSpecular", 1.0f, 1.0f, 0.0f);
+            shader->setUniform1f("brightness", 10.0f);
+            shader->end();
+            break;
+
+        case ShaderType::blinn_phong:
+            shader_name = "Blinn-Phong";
+            shader = &shader_blinn_phong;
+            shader->begin();
+            shader->setUniform3f(
+                    "colorAmbient",
+                    light.getAmbientColor().r / 255,
+                    light.getAmbientColor().g / 255,
+                    light.getAmbientColor().b / 255
+            );
+            shader->setUniform3f(
+                    "colorDiffuse",
+                    light.getDiffuseColor().r / 255,
+                    light.getDiffuseColor().g / 255,
+                    light.getDiffuseColor().b / 255
+            );
+            shader->setUniform3f(
+                    "colorSpecular",
+                    light.getSpecularColor().r / 255,
+                    light.getSpecularColor().g / 255,
+                    light.getSpecularColor().b / 255
+            );
+            shader->setUniform1f("brightness", 10.0f);
+            shader->end();
+            break;
+
+        default:
+            break;
+    }
 }
 
 void Renderer::create_preview() {
@@ -822,7 +941,7 @@ void Renderer::selectObject() {
         is_selected = true;
         generate_modified_primitive();
     } else {
-        ofLog() << "< object not found at (" << mouse_current_x << ", " << mouse_current_y << ")>";
+        ofLog() << "< no object found at (" << mouse_current_x << ", " << mouse_current_y << ")>";
     }
 }
 
@@ -861,7 +980,7 @@ void Renderer::releaseWithNoChange() {
     if (is_selected) {
         is_selected = false;
         ofColor temp_color = model2D.getCurrentPrimitive()->getColor();
-        temp_color.a = 255;
+        temp_color.a = (unsigned char)temp_alpha;
         model2D.getCurrentPrimitive()->changeColor(temp_color);
         delete preview_primitive;
     }
@@ -1022,9 +1141,12 @@ void Renderer::boutonLapinPressed() {
 	isGenererOctaedre = false;
 	isGenererTetraedre = false;
 	modele.loadModel("lapin.obj");
+    modele.disableMaterials();
 	isGenererLapin = true;
 	isGenererDragon = false;
 	isGenererModele3D = true;
+    ofLog() << "lapin model loaded";
+    ofLog() << "< Shader selected: " << shader_name << " >";
 }
 
 //Si on appuie sur le bouton dragon, le modele 3D devient le dragon
@@ -1032,9 +1154,12 @@ void Renderer::boutonDragonPressed(){
 	isGenererOctaedre = false;
 	isGenererTetraedre = false;
 	modele.loadModel("dragon.obj");
+    modele.disableMaterials();
 	isGenererDragon = true;
 	isGenererLapin = false;
 	isGenererModele3D = true;
+    ofLog() << "< Dragon model loaded >";
+    ofLog() << "< Shader selected: " << shader_name << " >";
 }
 
 
@@ -1172,10 +1297,21 @@ void Renderer::dessinerCurseurPeace(float x, float y) const {
 
 
 void Renderer::genererModele3D() {
+    // activer l'occlusion en profondeur
     ofEnableDepthTest();
+
+    // activer l'éclairage dynamique
+    ofEnableLighting();
+
     ofFill();
     ofSetLineWidth(1);
     ofSetColor(1);
+
+    light.enable();
+    material_basic.begin();
+    shader->begin();
+
+    shader->setUniform3f("lightPosition", light.getGlobalPosition() * ofGetCurrentMatrix(OF_MATRIX_MODELVIEW));
 
     //On ajuste la proportion du modele selon les sliders de proportion
     modele.setScale(sliderProportion3DX / 2, sliderProportion3DY / 2, sliderProportion3DZ / 2);
@@ -1188,6 +1324,13 @@ void Renderer::genererModele3D() {
     modele.draw(OF_MESH_FILL);
     modele.drawFaces();
 
+    shader->end();
+    material_basic.end();
+    light.disable();
+
+    // désactiver l'éclairage dynamique
+    ofDisableLighting();
+    // désactiver l'occlusion en profondeur
     ofDisableDepthTest();
 }
 
@@ -1306,6 +1449,8 @@ void Renderer::genererTetraedre() {
 
 	//ajoute l'origine
 	sommet4 += origineTetraedre;
+
+    shader->begin();
 	
 	//dessin des triangles avec les points
 	ofDrawTriangle(sommet1, sommet2, sommet3);
@@ -1321,6 +1466,8 @@ void Renderer::genererTetraedre() {
 	ofDrawLine(sommet2, sommet3);
 	ofDrawLine(sommet2, sommet4);
 	ofDrawLine(sommet3, sommet4);
+
+    shader->end();
 }
 
 void Renderer::genererOctaedre() {
