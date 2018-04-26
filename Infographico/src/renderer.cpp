@@ -369,7 +369,7 @@ void Renderer::setup() {
 }
 
 void Renderer::draw() {
-    ofClear(0, 0, 0);
+    ofClear(255, 255, 255);
     current_thickness = sliderEpaisseurLigneContour;
     //Color picker
     if (rgbMode){
