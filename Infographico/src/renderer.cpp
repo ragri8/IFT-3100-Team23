@@ -156,15 +156,6 @@ void Renderer::setup() {
 	guiModel3D.add(labelGenerationPrimitiveGeometrique.setup("Primitive geometrique 3D", ""));
 	guiModel3D.add(boutonTetraedre.setup("Tetraedre"));
 	guiModel3D.add(boutonOctaedre.setup("Octaedre"));
-
-	guiModel3D.add(labelPrimitiveGeo.setup("Rotation Primitive Geo", ""));
-	guiModel3D.add(buttonRotation3DX.setup("Activer rotation en X"));
-	guiModel3D.add(buttonRotation3DY.setup("Activer rotation en Y"));
-	guiModel3D.add(buttonRotation3DZ.setup("Activer rotation en Z"));
-	guiModel3D.add(sliderRotationPrimitiveGeo.setup("Rotation sur X", 0, 0, 360));
-	isRotation3DXPrimitiveGeo = true;
-	isRotation3DYPrimitiveGeo = false;
-	isRotation3DZPrimitiveGeo = false;
 	
 
 	guiModel3D.setPosition(-guiModel3D.getWidth(), 0);
@@ -177,11 +168,6 @@ void Renderer::setup() {
 	colorPickerGUI.add(greenOrSaturation);
 	colorPickerGUI.add(blueOrBrightness);
 	colorPickerGUI.add(alpha.set("alpha", 255, 0, 255));
-	
-
-	buttonRotation3DX.addListener(this, &Renderer::buttonRotation3DXPressed);
-	buttonRotation3DY.addListener(this, &Renderer::buttonRotation3DYPressed);
-	buttonRotation3DZ.addListener(this, &Renderer::buttonRotation3DZPressed);
 
 	//animer
 	animationGrossit = true;
@@ -732,72 +718,73 @@ void Renderer::update() {
 		if (isCourbeParametriqueActive) {
 			lineRenderer.clear();
 			switch (curveId) {
-			case CurveType::bezier:
-				for (int i = 0; i <= resolutionCourbe; ++i) {
-					lineRenderer.addVertex(ofPoint());
-				}
-				for (index = 0; index <= resolutionCourbe; ++index) {
-					bezier(
-						index / (float)resolutionCourbe,
-						pointDeControle1.x, pointDeControle1.y, pointDeControle1.z,
-						pointDeControle2.x, pointDeControle2.y, pointDeControle2.z,
-						pointDeControle4.x, pointDeControle4.y, pointDeControle4.z,
-						pointDeControle3.x, pointDeControle3.y, pointDeControle3.z,
-						positionDansCourbe.x, positionDansCourbe.y, positionDansCourbe.z);
-					lineRenderer[index] = positionDansCourbe;
-				}
+                case CurveType::bezier:
+                    for (int i = 0; i <= resolutionCourbe; ++i) {
+                        lineRenderer.addVertex(ofPoint());
+                    }
+                    for (index = 0; index <= resolutionCourbe; ++index) {
+                        bezier(
+                            index / (float)resolutionCourbe,
+                            pointDeControle1.x, pointDeControle1.y, pointDeControle1.z,
+                            pointDeControle2.x, pointDeControle2.y, pointDeControle2.z,
+                            pointDeControle4.x, pointDeControle4.y, pointDeControle4.z,
+                            pointDeControle3.x, pointDeControle3.y, pointDeControle3.z,
+                            positionDansCourbe.x, positionDansCourbe.y, positionDansCourbe.z);
+                        lineRenderer[index] = positionDansCourbe;
+                    }
+                    break;
 
-				break;
-			case CurveType::hermite:
-				for (int i = 0; i <= resolutionCourbe; ++i) {
-					lineRenderer.addVertex(ofPoint());
-				}
-				for (index = 0; index <= resolutionCourbe; ++index)
-				{
-					tangente1 = pointDeControle2 - pointDeControle1;
-					tangente2 = pointDeControle3 - pointDeControle4;
+                case CurveType::hermite:
+                    for (int i = 0; i <= resolutionCourbe; ++i) {
+                        lineRenderer.addVertex(ofPoint());
+                    }
+                    for (index = 0; index <= resolutionCourbe; ++index)
+                    {
+                        tangente1 = pointDeControle2 - pointDeControle1;
+                        tangente2 = pointDeControle3 - pointDeControle4;
 
-					hermite(
-						index / (float)resolutionCourbe,
-						pointDeControle1.x, pointDeControle1.y, pointDeControle1.z,
-						tangente1.x, tangente1.y, tangente1.z,
-						tangente2.x, tangente2.y, tangente2.z,
-						pointDeControle4.x, pointDeControle4.y, pointDeControle4.z,
-						positionDansCourbe.x, positionDansCourbe.y, positionDansCourbe.z);
+                        hermite(
+                            index / (float)resolutionCourbe,
+                            pointDeControle1.x, pointDeControle1.y, pointDeControle1.z,
+                            tangente1.x, tangente1.y, tangente1.z,
+                            tangente2.x, tangente2.y, tangente2.z,
+                            pointDeControle4.x, pointDeControle4.y, pointDeControle4.z,
+                            positionDansCourbe.x, positionDansCourbe.y, positionDansCourbe.z);
 
-					lineRenderer[index] = positionDansCourbe;
-				}
-				break;
-			case CurveType::splineDeBezier:
-				for (int i = 0; i <= resolutionCourbe * 2; ++i) {
-					lineRenderer.addVertex(ofPoint());
-				}
-				for (index = 0; index <= resolutionCourbe; ++index) {
-					bezier(
-						index / (float)resolutionCourbe,
-						pointDeControle1.x, pointDeControle1.y, pointDeControle1.z,
-						pointDeControle2.x, pointDeControle2.y, pointDeControle2.z,
-						pointDeControle4.x, pointDeControle4.y, pointDeControle4.z,
-						pointDeControle3.x, pointDeControle3.y, pointDeControle3.z,
-						positionDansCourbe.x, positionDansCourbe.y, positionDansCourbe.z);
+                        lineRenderer[index] = positionDansCourbe;
+                    }
+                    break;
 
-					lineRenderer[index] = positionDansCourbe;
-				}
-				for (index = 0; index <= resolutionCourbe; ++index) {
-					bezier(
-						index / (float)resolutionCourbe,
-						pointDeControle3.x, pointDeControle3.y, pointDeControle3.z,
-						pointDeControle4.x, pointDeControle4.y, pointDeControle4.z,
-						pointDeControle6.x, pointDeControle6.y, pointDeControle6.z,
-						pointDeControle5.x, pointDeControle5.y, pointDeControle5.z,
-						positionDansCourbe.x, positionDansCourbe.y, positionDansCourbe.z);
+                case CurveType::splineDeBezier:
+                    for (int i = 0; i <= resolutionCourbe * 2; ++i) {
+                        lineRenderer.addVertex(ofPoint());
+                    }
+                    for (index = 0; index <= resolutionCourbe; ++index) {
+                        bezier(
+                            index / (float)resolutionCourbe,
+                            pointDeControle1.x, pointDeControle1.y, pointDeControle1.z,
+                            pointDeControle2.x, pointDeControle2.y, pointDeControle2.z,
+                            pointDeControle4.x, pointDeControle4.y, pointDeControle4.z,
+                            pointDeControle3.x, pointDeControle3.y, pointDeControle3.z,
+                            positionDansCourbe.x, positionDansCourbe.y, positionDansCourbe.z);
 
-					lineRenderer[resolutionCourbe + index] = positionDansCourbe;
-				}
-				break;
+                        lineRenderer[index] = positionDansCourbe;
+                    }
+                    for (index = 0; index <= resolutionCourbe; ++index) {
+                        bezier(
+                            index / (float)resolutionCourbe,
+                            pointDeControle3.x, pointDeControle3.y, pointDeControle3.z,
+                            pointDeControle4.x, pointDeControle4.y, pointDeControle4.z,
+                            pointDeControle6.x, pointDeControle6.y, pointDeControle6.z,
+                            pointDeControle5.x, pointDeControle5.y, pointDeControle5.z,
+                            positionDansCourbe.x, positionDansCourbe.y, positionDansCourbe.z);
 
-			default:
-				break;
+                        lineRenderer[resolutionCourbe + index] = positionDansCourbe;
+                    }
+                    break;
+
+                default:
+                    break;
 			}
 		}
 	}
@@ -1356,100 +1343,22 @@ void Renderer::genererTetraedre() {
 
 	//sommet du haut
 	ofVec3f sommet1 = ofVec3f(0, -(taille*0.75) / 2, 0);
+    //sommet de derriere
+    ofVec3f sommet2 = ofVec3f(0, (taille*0.75) / 2, -(taille / (2* (sqrt(0.75)))));
+    //sommet avant gauche
+    ofVec3f sommet3 = ofVec3f(-(taille/2), (taille*0.75)/2, (taille / 4* sqrt(0.75)));
+    //sommet avant droit
+    ofVec3f sommet4 = ofVec3f((taille / 2), (taille*0.75) / 2, (taille / 4 * sqrt(0.75)));
 
-	//rotation x
-	if (isRotation3DXPrimitiveGeo) {
-		sommet1 = ofVec3f(0,
-			-((taille*0.75) / 2)*cos(ofDegToRad(sliderRotationPrimitiveGeo)),
-			-((taille*0.75) / 2)*sin(ofDegToRad(sliderRotationPrimitiveGeo)));
-	}
+    sommet1.rotate(sliderRotation3DX, sliderRotation3DY, sliderRotation3DZ);
+    sommet2.rotate(sliderRotation3DX, sliderRotation3DY, sliderRotation3DZ);
+    sommet3.rotate(sliderRotation3DX, sliderRotation3DY, sliderRotation3DZ);
+    sommet4.rotate(sliderRotation3DX, sliderRotation3DY, sliderRotation3DZ);
 
-	//rotation z
-	else if (isRotation3DZPrimitiveGeo) {
-		sommet1 = ofVec3f(((taille*0.75) / 2)*sin(ofDegToRad(sliderRotationPrimitiveGeo)),
-			((-(taille*0.75) / 2)*cos(ofDegToRad(sliderRotationPrimitiveGeo))), 0);
-	}
 	//ajoute l'origine
 	sommet1 += origineTetraedre;
-
-	//sommet de derriere
-	ofVec3f sommet2 = ofVec3f(0, (taille*0.75) / 2, -(taille / (2* (sqrt(0.75)))));
-
-	//rotation x
-	if (isRotation3DXPrimitiveGeo) {
-		sommet2 = ofVec3f(0,
-			((taille*0.75) / 2)*cos(ofDegToRad(sliderRotationPrimitiveGeo)) + (-(taille / (2 * (sqrt(0.75)))))*sin(ofDegToRad(sliderRotationPrimitiveGeo)),
-			-(taille / (2 * (sqrt(0.75))))*cos(ofDegToRad(sliderRotationPrimitiveGeo)) - ((taille*0.75) / 2)*sin(ofDegToRad(sliderRotationPrimitiveGeo)));
-	}
-
-	//rotation y
-	else if (isRotation3DYPrimitiveGeo) {
-		sommet2 = ofVec3f((taille / (2 * (sqrt(0.75))))*sin(ofDegToRad(sliderRotationPrimitiveGeo)), (taille*0.75) / 2, -(taille / (2 * (sqrt(0.75))))*cos(ofDegToRad(sliderRotationPrimitiveGeo)));
-	}
-
-	//rotation z
-	else if (isRotation3DZPrimitiveGeo) {
-		sommet2 = ofVec3f(-((taille*0.75) / 2)*sin(ofDegToRad(sliderRotationPrimitiveGeo)), ((taille*0.75) / 2)*cos(ofDegToRad(sliderRotationPrimitiveGeo)), -(taille / (2 * (sqrt(0.75)))));
-
-	}
-
-	//ajoute l'origine
 	sommet2 += origineTetraedre;
-
-
-	//sommet avant gauche
-	ofVec3f sommet3 = ofVec3f(-(taille/2), (taille*0.75)/2, (taille / 4* sqrt(0.75)));
-
-	//rotation x
-	if (isRotation3DXPrimitiveGeo) {
-		sommet3 = ofVec3f(-(taille / 2),
-			(((taille*0.75) / 2)*cos(ofDegToRad(sliderRotationPrimitiveGeo)) + (taille / 4 * sqrt(0.75))*sin(ofDegToRad(sliderRotationPrimitiveGeo))),
-			((taille / 4 * sqrt(0.75))*cos(ofDegToRad(sliderRotationPrimitiveGeo)) - ((taille*0.75) / 2)*sin(ofDegToRad(sliderRotationPrimitiveGeo))));
-	}
-	
-	//rotation y
-	else if (isRotation3DYPrimitiveGeo) {
-		sommet3 = ofVec3f(-(taille / 2)*cos(ofDegToRad(sliderRotationPrimitiveGeo)) - (taille / 4 * sqrt(0.75))*sin(ofDegToRad(sliderRotationPrimitiveGeo)),
-			(taille*0.75) / 2,
-			(taille / 4 * sqrt(0.75))*cos(ofDegToRad(sliderRotationPrimitiveGeo)) + (-(taille / 2)*sin(ofDegToRad(sliderRotationPrimitiveGeo))));
-	}
-	
-	//rotation z
-	else if (isRotation3DZPrimitiveGeo) {
-		sommet3 = ofVec3f(((-(taille / 2))*cos(ofDegToRad(sliderRotationPrimitiveGeo))) - (((taille*0.75) / 2)*sin(ofDegToRad(sliderRotationPrimitiveGeo))),
-			(((taille*0.75) / 2)*cos(ofDegToRad(sliderRotationPrimitiveGeo))) + ((-(taille / 2))*sin(ofDegToRad(sliderRotationPrimitiveGeo))),
-			(taille / 4 * sqrt(0.75)));
-	}
-
-	//ajoute l'origine
 	sommet3 += origineTetraedre;
-
-
-	//sommet avant droit
-	ofVec3f sommet4 = ofVec3f((taille / 2), (taille*0.75) / 2, (taille / 4 * sqrt(0.75)));
-
-	//rotation x
-	if (isRotation3DXPrimitiveGeo) {
-		sommet4 = ofVec3f((taille / 2),
-			(((taille*0.75) / 2)*cos(ofDegToRad(sliderRotationPrimitiveGeo)) + (taille / 4 * sqrt(0.75))*sin(ofDegToRad(sliderRotationPrimitiveGeo))),
-			((taille / 4 * sqrt(0.75))*cos(ofDegToRad(sliderRotationPrimitiveGeo)) - ((taille*0.75) / 2)*sin(ofDegToRad(sliderRotationPrimitiveGeo))));
-	}
-	
-	//rotation y
-	else if (isRotation3DYPrimitiveGeo) {
-		sommet4 = ofVec3f((taille / 2)*cos(ofDegToRad(sliderRotationPrimitiveGeo)) - (taille / 4 * sqrt(0.75))*sin(ofDegToRad(sliderRotationPrimitiveGeo)),
-			(taille*0.75) / 2,
-			(taille / 4 * sqrt(0.75))*cos(ofDegToRad(sliderRotationPrimitiveGeo)) + ((taille / 2)*sin(ofDegToRad(sliderRotationPrimitiveGeo))));
-	}
-	
-	//rotation z
-	else if (isRotation3DZPrimitiveGeo) {
-		sommet4 = ofVec3f((((taille / 2))*cos(ofDegToRad(sliderRotationPrimitiveGeo))) - (((taille*0.75) / 2)*sin(ofDegToRad(sliderRotationPrimitiveGeo))),
-			(((taille*0.75) / 2)*cos(ofDegToRad(sliderRotationPrimitiveGeo))) + (((taille / 2))*sin(ofDegToRad(sliderRotationPrimitiveGeo))),
-			(taille / 4 * sqrt(0.75)));
-	}
-
-	//ajoute l'origine
 	sommet4 += origineTetraedre;
 
     shader->begin();
@@ -1490,115 +1399,26 @@ void Renderer::genererOctaedre() {
 
 	//sommet du haut
 	ofVec3f sommet1 = ofVec3f(0, -(taille*0.75), 0);
+    //sommet de derriere
+    ofVec3f sommet2 = ofVec3f(0, 0, -(taille) / (2* sqrt(0.75)));
+    //sommet avant gauche
+    ofVec3f sommet3 = ofVec3f(-(taille / 2), 0, (taille) / (4* sqrt(0.75)));
+    //sommet avant droit
+    ofVec3f sommet4 = ofVec3f((taille / 2), 0, (taille) / (4 * sqrt(0.75)));
+    //sommet du dessous
+    ofVec3f sommet5 = ofVec3f(0, (taille*0.75), 0);
 
-	//rotation x
-	if (isRotation3DXPrimitiveGeo) {
-		sommet1 = ofVec3f(0,
-			-((taille*0.75))*cos(ofDegToRad(sliderRotationPrimitiveGeo)),
-			-((taille*0.75))*sin(ofDegToRad(sliderRotationPrimitiveGeo)));
-	}
+    sommet1.rotate(sliderRotation3DX, sliderRotation3DY, sliderRotation3DZ);
+    sommet2.rotate(sliderRotation3DX, sliderRotation3DY, sliderRotation3DZ);
+    sommet3.rotate(sliderRotation3DX, sliderRotation3DY, sliderRotation3DZ);
+    sommet4.rotate(sliderRotation3DX, sliderRotation3DY, sliderRotation3DZ);
+    sommet5.rotate(sliderRotation3DX, sliderRotation3DY, sliderRotation3DZ);
 
-	//rotation z
-	else if (isRotation3DZPrimitiveGeo) {
-		sommet1 = ofVec3f(((taille*0.75))*sin(ofDegToRad(sliderRotationPrimitiveGeo)),
-			((-(taille*0.75))*cos(ofDegToRad(sliderRotationPrimitiveGeo))), 0);
-	}
 	//ajoute l'origine
 	sommet1 += origineOctaedre;
-
-	//sommet de derriere
-	ofVec3f sommet2 = ofVec3f(0, 0, -(taille) / (2* sqrt(0.75)));
-
-	//rotation x
-	if (isRotation3DXPrimitiveGeo) {
-		sommet2 = ofVec3f(0,
-			(-(taille) / (2 * sqrt(0.75)))*sin(ofDegToRad(sliderRotationPrimitiveGeo)),
-			((taille) / (2 * sqrt(0.75)))*cos(ofDegToRad(sliderRotationPrimitiveGeo)));
-	}
-
-	//rotation y
-	else if (isRotation3DYPrimitiveGeo) {
-		sommet2 = ofVec3f(((taille) / (2 * sqrt(0.75)))*sin(ofDegToRad(sliderRotationPrimitiveGeo)), 0, -((taille) / (2 * sqrt(0.75)))*cos(ofDegToRad(sliderRotationPrimitiveGeo)));
-	}
-
-	//ajoute l'origine
 	sommet2 += origineOctaedre;
-
-
-	//sommet avant gauche
-	ofVec3f sommet3 = ofVec3f(-(taille / 2), 0, (taille) / (4* sqrt(0.75)));
-
-	//rotation x
-	if (isRotation3DXPrimitiveGeo) {
-		sommet3 = ofVec3f(-(taille / 2),
-			(((taille) / (4 * sqrt(0.75)))*sin(ofDegToRad(sliderRotationPrimitiveGeo))),
-			(((taille) / (4 * sqrt(0.75)))*cos(ofDegToRad(sliderRotationPrimitiveGeo))));
-	}
-
-	//rotation y
-	else if (isRotation3DYPrimitiveGeo) {
-		sommet3 = ofVec3f(-(taille / 2)*cos(ofDegToRad(sliderRotationPrimitiveGeo)) - ((taille) / (4 * sqrt(0.75)))*sin(ofDegToRad(sliderRotationPrimitiveGeo)),
-			0,
-			((taille) / (4 * sqrt(0.75)))*cos(ofDegToRad(sliderRotationPrimitiveGeo)) + (-(taille / 2)*sin(ofDegToRad(sliderRotationPrimitiveGeo))));
-	}
-
-	//rotation z
-	else if (isRotation3DZPrimitiveGeo) {
-		sommet3 = ofVec3f(((-(taille / 2))*cos(ofDegToRad(sliderRotationPrimitiveGeo))),
-			((-(taille / 2))*sin(ofDegToRad(sliderRotationPrimitiveGeo))),
-			(taille) / (4 * sqrt(0.75)));
-	}
-
-	//ajoute l'origine
 	sommet3 += origineOctaedre;
-
-
-	/***x' = x cos f - y sin f***/
-	/***y' = y cos f + x sin f***/
-
-	//sommet avant droit
-	ofVec3f sommet4 = ofVec3f((taille / 2), 0, (taille) / (4 * sqrt(0.75)));
-
-	//rotation x
-	if (isRotation3DXPrimitiveGeo) {
-		sommet4 = ofVec3f((taille / 2),
-			((taille) / (4 * sqrt(0.75)))*sin(ofDegToRad(sliderRotationPrimitiveGeo))),
-			(((taille) / (4 * sqrt(0.75)))*cos(ofDegToRad(sliderRotationPrimitiveGeo)));
-	}
-
-	//rotation y
-	else if (isRotation3DYPrimitiveGeo) {
-		sommet4 = ofVec3f((taille / 2)*cos(ofDegToRad(sliderRotationPrimitiveGeo)) - ((taille) / (4 * sqrt(0.75)))*sin(ofDegToRad(sliderRotationPrimitiveGeo)),
-			0,
-			((taille) / (4 * sqrt(0.75)))*cos(ofDegToRad(sliderRotationPrimitiveGeo)) + ((taille / 2)*sin(ofDegToRad(sliderRotationPrimitiveGeo))));
-	}
-
-	//rotation z
-	else if (isRotation3DZPrimitiveGeo) {
-		sommet4 = ofVec3f((((taille / 2))*cos(ofDegToRad(sliderRotationPrimitiveGeo))),
-			(((taille / 2))*sin(ofDegToRad(sliderRotationPrimitiveGeo))),
-			(taille) / (4 * sqrt(0.75)));
-	}
-
-	//ajoute l'origine
 	sommet4 += origineOctaedre;
-
-	//sommet du dessous
-	ofVec3f sommet5 = ofVec3f(0, (taille*0.75), 0);
-
-	//rotation x
-	if (isRotation3DXPrimitiveGeo) {
-		sommet5 = ofVec3f(0,
-			((taille*0.75))*cos(ofDegToRad(sliderRotationPrimitiveGeo)),
-			((taille*0.75))*sin(ofDegToRad(sliderRotationPrimitiveGeo)));
-	}
-
-	//rotation z
-	else if (isRotation3DZPrimitiveGeo) {
-		sommet5 = ofVec3f((-(taille*0.75))*sin(ofDegToRad(sliderRotationPrimitiveGeo)),
-			(((taille*0.75))*cos(ofDegToRad(sliderRotationPrimitiveGeo))), 0);
-	}
-	//ajoute l'origine
 	sommet5 += origineOctaedre;
 
 	//dessin des triangles avec les points
@@ -1639,28 +1459,6 @@ void Renderer::rgbModeSwitched(bool &rgbMode) {
 		greenOrSaturation.set("saturation", currentColor.getSaturation(), 0, 255);
 		blueOrBrightness.set("brightness", currentColor.getBrightness(), 0, 255);
 	}
-}
-
-//primitive geo
-void Renderer::buttonRotation3DXPressed() {
-	isRotation3DXPrimitiveGeo = true;
-	isRotation3DYPrimitiveGeo = false;
-	isRotation3DZPrimitiveGeo = false;
-	sliderRotationPrimitiveGeo.setName("Rotation sur X");
-}
-void Renderer::buttonRotation3DYPressed() {
-	isRotation3DXPrimitiveGeo = false;
-	isRotation3DYPrimitiveGeo = true;
-	isRotation3DZPrimitiveGeo = false;
-	sliderRotationPrimitiveGeo.setName("Rotation sur Y");
-
-}
-void Renderer::buttonRotation3DZPressed() {
-	isRotation3DXPrimitiveGeo = false;
-	isRotation3DYPrimitiveGeo = false;
-	isRotation3DZPrimitiveGeo = true;
-	sliderRotationPrimitiveGeo.setName("Rotation sur Z");
-
 }
 
 //Generer boite autour des modeles 3D
