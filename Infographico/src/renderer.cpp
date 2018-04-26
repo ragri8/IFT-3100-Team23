@@ -327,6 +327,8 @@ void Renderer::setup() {
 	guiModel3D.add(toggleSurfaceDeCoons.set("Surface de Coons", false));
 	//interface triangulation
 	guiModel3D.add(toogleTriangulation.set("Ajouter triangulation", false));
+	//interface tesselation
+	guiModel3D.add(sliderNiveauTesselation.setup("Niveau de tesselation", 4, 1, 4));
 
 	toggleFrontCamera.addListener(this, &Renderer::toggleFrontCameraPressed);
 	toggleBackCamera.addListener(this, &Renderer::toggleBackCameraPressed);
@@ -544,14 +546,19 @@ void Renderer::draw3D() {
         ofDrawEllipse(pointDeControleSurface7.x, pointDeControleSurface7.y, pointDeControleSurface7.z, rayonPointDeControle, rayonPointDeControle);
         ofDrawEllipse(pointDeControleSurface8.x, pointDeControleSurface8.y, pointDeControleSurface8.z, rayonPointDeControle, rayonPointDeControle);
 
-        ofSetColor(46, 48, 51);
-        ofSetLineWidth(2.0f);
-        for (int i = 0; i < resolutionSurface; i++) {
-            lignesDeSurfaceV.at(i).draw();
-        }
-        for (int i = 0; i < resolutionSurface; i++) {
-            lignesDeSurfaceU.at(i).draw();
-        }
+		if (isTriangulation) {
+			maillageDeTriangulation.draw();
+		}
+		else {
+			ofSetColor(46, 48, 51);
+			ofSetLineWidth(2.0f);
+			for (int i = 0; i < resolutionSurface; i++) {
+				lignesDeSurfaceV.at(i).draw();
+			}
+			for (int i = 0; i < resolutionSurface; i++) {
+				lignesDeSurfaceU.at(i).draw();
+			}
+		}
     }
     if (isGenererModele3D) {
         genererModele3D();
@@ -712,6 +719,59 @@ void Renderer::update() {
 					surfaceCoons = lerpu + lerpv - blerp;
 					lignesDeSurfaceU.at(i)[j] = surfaceCoons;
 				}
+			}
+			if (isTriangulation) {
+				maillageDeTriangulation.clear();
+				if (sliderNiveauTesselation == 4) {
+					saut = 1;
+				}
+				else if (sliderNiveauTesselation == 3) {
+					saut = 3;
+				}
+				else if (sliderNiveauTesselation == 2) {
+					saut = 9;
+				}
+				else {
+					saut = -1;
+				}
+
+				for (int x = 0; x < resolutionSurface; x++) {
+					for (int y = 0; y < resolutionSurface; y++) {
+						maillageDeTriangulation.addVertex(ofPoint(lignesDeSurfaceU.at(x)[y]));
+						maillageDeTriangulation.addColor(ofColor(46, 48, 51));
+					}
+				}
+				if (saut == -1) {
+					maillageDeTriangulation.addIndex(0);
+					maillageDeTriangulation.addIndex(resolutionSurface / 2);
+					maillageDeTriangulation.addIndex(((resolutionSurface)*(resolutionSurface - 1)));
+
+					maillageDeTriangulation.addIndex(((resolutionSurface)*(resolutionSurface - 1)));
+					maillageDeTriangulation.addIndex(resolutionSurface / 2);
+					maillageDeTriangulation.addIndex(((resolutionSurface)*(resolutionSurface - 1)) + resolutionSurface / 2);
+
+					maillageDeTriangulation.addIndex(resolutionSurface / 2);
+					maillageDeTriangulation.addIndex(((resolutionSurface)*(resolutionSurface - 1)) + resolutionSurface / 2);
+					maillageDeTriangulation.addIndex(resolutionSurface - 1);
+
+					maillageDeTriangulation.addIndex(((resolutionSurface)*(resolutionSurface - 1)) + resolutionSurface / 2);
+					maillageDeTriangulation.addIndex(resolutionSurface - 1);
+					maillageDeTriangulation.addIndex((resolutionSurface)*(resolutionSurface)-1);
+				}
+				else {
+					for (int x = 0; x < resolutionSurface - 1; x += saut) {
+						for (int y = 0; y < resolutionSurface - 1; y += saut) {
+							maillageDeTriangulation.addIndex(x + y * resolutionSurface);
+							maillageDeTriangulation.addIndex((x + saut) + y * resolutionSurface);
+							maillageDeTriangulation.addIndex(x + (y + saut)*resolutionSurface);
+
+							maillageDeTriangulation.addIndex((x + saut) + y * resolutionSurface);
+							maillageDeTriangulation.addIndex((x + saut) + (y + saut)*resolutionSurface);
+							maillageDeTriangulation.addIndex(x + (y + saut)*resolutionSurface);
+						}
+					}
+				}
+
 			}
 		}
 	} else {
