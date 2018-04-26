@@ -379,50 +379,10 @@ void Renderer::draw() {
 	}
     draw2D();
     if (!is2D) {
-        draw3DCam();
+        draw3D();
     }
     if (is_menu_displayed) {
-
-        //GUI et affichage
-        guiMenu.setPosition(0, 0);
-        guiMenu.draw();
-		
-        if (!is2D) {
-            guiModel3D.setPosition(screenWidth - guiDessin.getWidth(), 0);
-            guiModel3D.draw();
-        } else {
-            guiDessin.setPosition(screenWidth - guiDessin.getWidth(), 0);
-            guiDessin.draw();
-        }
-
-        // dessiner le color picker
-		colorPickerGUI.setPosition(0, guiMenu.getHeight());
-		colorPickerGUI.draw();
-		ofFill();
-		ofSetColor(currentColor);
-		ofDrawRectangle(0, colorPickerGUI.getPosition().y + colorPickerGUI.getHeight(), colorPickerGUI.getWidth(), 20);
-		ofNoFill();
-		ofSetLineWidth(3);
-		ofSetColor(0, 0, 0);
-		ofDrawRectangle(0, colorPickerGUI.getPosition().y + colorPickerGUI.getHeight(), colorPickerGUI.getWidth(), 20);
-		ofFill();
-
-
-        // definir position de l'interface graphique de composition de texture
-        if (imageComposition) {
-            textureCompositionGUI.setPosition(0, colorPickerGUI.getPosition().y + colorPickerGUI.getHeight() + 20);
-            textureCompositionGUI.draw();
-        }
-        // definir position de l'interface graphique de filtrage par convolution
-        if (convolutionFilter) {
-            filtrageConvolutionGUI.setPosition(0, colorPickerGUI.getPosition().y + colorPickerGUI.getHeight() + 20);
-            filtrageConvolutionGUI.draw();
-        }
-        // definir position de l'interface graphique de texture procédural
-        if (proceduralTexture) {
-            textureProceduralGUI.setPosition(0, colorPickerGUI.getPosition().y + colorPickerGUI.getHeight() + 20);
-            textureProceduralGUI.draw();
-        }
+        drawGui();
     }
     if (is_filled) {
         ofFill();
@@ -547,7 +507,7 @@ void Renderer::draw2D() {
     }
 }
 
-void Renderer::draw3DCam() {
+void Renderer::draw3D() {
     //rendu 3D de la scène avec la caméra
     ofEnableLighting();
     camera->begin();
@@ -619,6 +579,48 @@ void Renderer::draw3DCam() {
     }
     camera->end();
     ofDisableLighting();
+}
+
+void Renderer::drawGui() {
+    //GUI et affichage
+    guiMenu.setPosition(0, 0);
+    guiMenu.draw();
+
+    if (!is2D) {
+        guiModel3D.setPosition(screenWidth - guiDessin.getWidth(), 0);
+        guiModel3D.draw();
+    } else {
+        guiDessin.setPosition(screenWidth - guiDessin.getWidth(), 0);
+        guiDessin.draw();
+    }
+
+    // dessiner le color picker
+    colorPickerGUI.setPosition(0, guiMenu.getHeight());
+    colorPickerGUI.draw();
+    ofFill();
+    ofSetColor(currentColor);
+    ofDrawRectangle(0, colorPickerGUI.getPosition().y + colorPickerGUI.getHeight(), colorPickerGUI.getWidth(), 20);
+    ofNoFill();
+    ofSetLineWidth(3);
+    ofSetColor(0, 0, 0);
+    ofDrawRectangle(0, colorPickerGUI.getPosition().y + colorPickerGUI.getHeight(), colorPickerGUI.getWidth(), 20);
+    ofFill();
+
+    // definir position de l'interface graphique de composition de texture
+    if (imageComposition) {
+        textureCompositionGUI.setPosition(0, colorPickerGUI.getPosition().y + colorPickerGUI.getHeight() + 20);
+        textureCompositionGUI.draw();
+    }
+    // definir position de l'interface graphique de filtrage par convolution
+    if (convolutionFilter) {
+        filtrageConvolutionGUI.setPosition(0, colorPickerGUI.getPosition().y + colorPickerGUI.getHeight() + 20);
+        filtrageConvolutionGUI.draw();
+    }
+    // definir position de l'interface graphique de texture procédural
+    if (proceduralTexture) {
+        textureProceduralGUI.setPosition(0, colorPickerGUI.getPosition().y + colorPickerGUI.getHeight() + 20);
+        textureProceduralGUI.draw();
+    }
 }
 
 void Renderer::update() {

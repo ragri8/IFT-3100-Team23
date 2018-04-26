@@ -494,7 +494,8 @@ public:
 	void setup();
 	void draw();
     void draw2D();
-    void draw3DCam();
+    void draw3D();
+    void drawGui();
 	void update();
     void updateShader();
 
