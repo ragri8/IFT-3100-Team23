@@ -179,10 +179,10 @@ void Renderer::setup() {
 	guiModel3D.add(sliderProportion3DZ.setup("Proportion en Z", 1, 0.5, 2));
 
 	guiModel3D.add(labelEffet.setup("Effets", ""));
-    guiModel3D.add(boutonLumiere.setup("Modifier les lumières"));
-    guiModel3D.add(boutonAmbient.setup("Modifier la composante ambiante"));
-    guiModel3D.add(boutonDiffuse.setup("Modifier la composante diffuse"));
-    guiModel3D.add(boutonSpeculaire.setup("Modifier la composante spéculaire"));
+    guiModel3D.add(boutonLumiere.setup("Modifier les lumieres"));
+    guiModel3D.add(boutonAmbient.setup("Composante ambiante"));
+    guiModel3D.add(boutonDiffuse.setup("Composante diffuse"));
+    guiModel3D.add(boutonSpeculaire.setup("Composante speculaire"));
     guiModel3D.add(boutonShader.setup("Choisir un shader"));
 	guiModel3D.add(animer.setup("Animer", false));
 	guiModel3D.add(dessierBoite.setup("Dessiner boite", false));
