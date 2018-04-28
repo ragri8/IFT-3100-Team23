@@ -348,6 +348,9 @@ public:
 	//interface brume
 	ofParameter<bool> toogleActiverBrume;
 
+	//interface tesselation
+	ofxSlider<int> sliderNiveauTesselation;
+
 	//Camera
 	Camera camera_active;
 
@@ -464,9 +467,13 @@ public:
 
 	//Triangulation
 	bool isTriangulation;
+	ofMesh maillageDeTriangulation;
 
 	//brume
 	bool brumeActiver;
+
+	//Tesselation
+	int saut;
 
 	//Ecouteur de l'interface
 	void boutonLignePressed();
