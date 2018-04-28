@@ -22,7 +22,7 @@ uniform float brightness;
 
 // position des sources de lumière
 uniform vec3 lightPosition;
-uniform vec3 secondLightPosition;
+uniform vec3 lightPosition2;
 
 void main()
 {
@@ -31,9 +31,11 @@ void main()
 
   // calculer la direction de la surface vers la lumière (L)
   vec3 L = normalize(lightPosition - viewSpacePosition);
+  vec3 L2 = normalize(lightPosition2 - viewSpacePosition);
 
   // calculer le niveau de réflexion diffuse (N • L)
   float reflectionDiffuse = max(dot(N, L), 0.0);
+  float reflectionDiffuse2 = max(dot(N, L2), 0.0);
 
   // réflexion spéculaire par défaut
   float reflectionSpecular = 0.0;
@@ -49,6 +51,20 @@ void main()
 
     // calculer le niveau de réflexion spéculaire (N • H)
     reflectionSpecular = pow(max(dot(N, H), 0.0), brightness);
+  }
+  // réflexion spéculaire 2 par défaut
+  float reflectionSpecular2 = 0.0;
+
+  if (reflectionDiffuse2 > 0.0)
+  {
+    // calculer la direction de la surface vers la caméra (V)
+    vec3 V = normalize(-viewSpacePosition);
+
+    // calculer la direction du demi-vecteur de réflection (H) en fonction du vecteur de vue (V) et de lumière (L)
+    vec3 H = normalize(V + L2);
+
+    // calculer le niveau de réflexion spéculaire (N • H)
+    reflectionSpecular2 = pow(max(dot(N, H), 0.0), brightness) * 0.6;
   }
 
   // calculer la couleur du fragment

@@ -16,7 +16,7 @@ void Renderer::setup() {
     is_mouse_button_legit = false;
 
     is_ctrl_pressed = false;
-    currentColor = ofColor(255, 0, 0);
+    currentColor = ofColor(255, 0, 0, 255);
     current_thickness = 3.0f;
     model2D = Model2D();
     history = History();
@@ -31,16 +31,40 @@ void Renderer::setup() {
     origin_slider_y = 0;
     temp_alpha = 0;
 
+    selected_3D_instance = Select_3D::lumiere;
+    light_selected = Light_select::light1;
+    light_selected_aspect = Light_aspect::ambient;
+
     //Modele 3D
     isGenererModele3D = false;
     //eclairage
-    light.setPointLight();
+    light_1.setPointLight();
     ofEnableLighting();
-    light.setAmbientColor(ofColor(20, 20, 20));
-    light.setDiffuseColor(ofColor(100, 100, 100));
-    light.setSpecularColor(ofColor(100, 100, 100));
-    light.setPosition(0.0f, 0.0f, 1000.0f);
-    light.enable();
+    light_1.setAmbientColor(ofColor(20, 20, 20));
+    light_1.setDiffuseColor(ofColor(190, 100, 100));
+    light_1.setSpecularColor(ofColor(100, 100, 100));
+    light_1.setGlobalPosition(0, 50, 300);
+    light_1.enable();
+
+    light_2.setPointLight();
+    light_2.setAmbientColor(ofColor(0, 0, 20));
+    light_2.setDiffuseColor(ofColor(0, 0, 250));
+    light_2.setSpecularColor(ofColor(50, 50, 250));
+    light_2.setGlobalPosition(0, 50, 300);
+    light_2.enable();
+
+    light_3.setPointLight();
+    light_3.setAmbientColor(ofColor(0, 0, 0));
+    light_3.setDiffuseColor(ofColor(0, 200, 0));
+    light_3.setSpecularColor(ofColor(60, 255, 60));
+    light_3.setGlobalPosition(0, 50, 300);
+    light_3.enable();
+
+    light_1_angle = ofVec3f(0, 45, 0);
+    light_2_angle = ofVec3f(0, 270, 0);
+    light_3_angle = ofVec3f(30, 0, 0);
+
+    modele_angle = ofVec3f(0, 0, 0);
 
     //Ajout des écouteurs de l'interface
     boutonCercle.addListener(this, &Renderer::boutonCerclePressed);
@@ -62,6 +86,12 @@ void Renderer::setup() {
     boutonOctaedre.addListener(this, &Renderer::boutonOctaedrePressed);
     boutonLapin.addListener(this, &Renderer::boutonLapinPressed);
     boutonDragon.addListener(this, &Renderer::boutonDragonPressed);
+
+    boutonLumiere.addListener(this, &Renderer::boutonLumierePressed);
+    boutonAmbient.addListener(this, &Renderer::boutonAmbientPressed);
+    boutonDiffuse.addListener(this, &Renderer::boutonDiffusePressed);
+    boutonSpeculaire.addListener(this, &Renderer::boutonSpeculairePressed);
+    boutonShader.addListener(this, &Renderer::boutonShaderPressed);
 
 	imageComposition.addListener(this, &Renderer::compositionToggled);
 	convolutionFilter.addListener(this, &Renderer::convolutionToggled);
@@ -149,6 +179,11 @@ void Renderer::setup() {
 	guiModel3D.add(sliderProportion3DZ.setup("Proportion en Z", 1, 0.5, 2));
 
 	guiModel3D.add(labelEffet.setup("Effets", ""));
+    guiModel3D.add(boutonLumiere.setup("Modifier les lumières"));
+    guiModel3D.add(boutonAmbient.setup("Modifier la composante ambiante"));
+    guiModel3D.add(boutonDiffuse.setup("Modifier la composante diffuse"));
+    guiModel3D.add(boutonSpeculaire.setup("Modifier la composante spéculaire"));
+    guiModel3D.add(boutonShader.setup("Choisir un shader"));
 	guiModel3D.add(animer.setup("Animer", false));
 	guiModel3D.add(dessierBoite.setup("Dessiner boite", false));
 
@@ -251,20 +286,29 @@ void Renderer::setup() {
             "shader/blinn_phong_330_vs.glsl",
             "shader/blinn_phong_330_fs.glsl");
 
-    shader_multiple_light_blinn_phong.load(
+    shader_2_light_blinn_phong.load(
             "shader/blinn_phong_330_vs.glsl",
-            "shader/custom_blinn_phong_330_fs.glsl");
+            "shader/double_light_blinn_phong_330_fs.glsl");
+
+    shader_3_light_blinn_phong.load(
+            "shader/blinn_phong_330_vs.glsl",
+            "shader/triple_light_blinn_phong_330_fs.glsl");
+
+    shader_lights.load(
+            "shader/lambert_330_vs.glsl",
+            "shader/lambert_330_fs.glsl");
 
     shader_active = ShaderType::blinn_phong;
 
     shader = &shader_blinn_phong;
 
     // shininess is a value between 0 - 128, 128 being the most shiny //
-    material_basic.setShininess( 60 );
+    material_basic.setShininess( 100 );
     // the light highlight of the material //
-    material_basic.setSpecularColor(ofColor(255, 20, 20));
-    material_basic.setDiffuseColor(ofColor(220, 100, 10));
-    material_basic.setAmbientColor(ofColor(127, 105, 0));
+    material_basic.setSpecularColor(ofColor(255, 150, 150));
+    material_basic.setDiffuseColor(ofColor(150, 80, 50));
+    material_basic.setAmbientColor(ofColor(100, 80, 40));
+    //light_material.setAmbientColor(ofColor(light_1.getDiffuseColor()));
 
 	ofEnableDepthTest();
 	resetCamera();
@@ -408,7 +452,6 @@ void Renderer::draw2D() {
         filteredImage.draw(guiMenu.getWidth(), 0, currentImage.getWidth(), currentImage.getHeight());
     }
     else if (ternaryTree || binaryTree) {
-        //ofSetBackgroundColor(255, 255, 255, 255);
         ofSetColor(255, 255, 255, 255);
         ofSetLineWidth(2);
 
@@ -495,7 +538,6 @@ void Renderer::draw2D() {
 
 void Renderer::draw3D() {
     //rendu 3D de la scène avec la caméra
-    ofEnableLighting();
     camera->begin();
 
     if (camera_active != Camera::front)
@@ -563,8 +605,81 @@ void Renderer::draw3D() {
     } else if (isGenererOctaedre) {
         genererOctaedre();
     }
+
+    ofSetColor(currentColor);
+    ofFill();
+
+    // générer des sphères pour représenter les sources de lumière
+    drawLightSources();
+
     camera->end();
     ofDisableLighting();
+}
+
+void Renderer::drawLightSources() {
+    shader_lights.begin();
+    shader_lights.setUniform3f(
+            "colorAmbient",
+            light_1.getAmbientColor().r,
+            light_1.getAmbientColor().g,
+            light_1.getAmbientColor().b
+    );
+    shader_lights.setUniform3f(
+            "colorDiffuse",
+            light_1.getDiffuseColor().r,
+            light_1.getDiffuseColor().g,
+            light_1.getDiffuseColor().b
+    );
+    shader_lights.setUniform3f("lightPosition", camera->getGlobalPosition());
+    shader_lights.end();
+
+    shader_lights.begin();
+    ofDrawSphere(light_1.getGlobalPosition().rotate(light_1_angle.x, light_1_angle.y, light_1_angle.z), 10);
+    shader_lights.end();
+
+    if (number_of_light > 1) {
+
+        shader_lights.begin();
+        shader_lights.setUniform3f(
+                "colorAmbient",
+                light_2.getAmbientColor().r,
+                light_2.getAmbientColor().g,
+                light_2.getAmbientColor().b
+        );
+        shader_lights.setUniform3f(
+                "colorDiffuse",
+                light_2.getDiffuseColor().r,
+                light_2.getDiffuseColor().g,
+                light_2.getDiffuseColor().b
+        );
+        shader_lights.end();
+
+        shader_lights.begin();
+        ofDrawSphere(light_2.getGlobalPosition().rotate(light_2_angle.x, light_2_angle.y, light_2_angle.z), 10);
+        shader_lights.end();
+
+        if (number_of_light == 3) {
+
+            shader_lights.begin();
+            shader_lights.setUniform3f(
+                    "colorAmbient",
+                    light_3.getAmbientColor().r,
+                    light_3.getAmbientColor().g,
+                    light_3.getAmbientColor().b
+            );
+            shader_lights.setUniform3f(
+                    "colorDiffuse",
+                    light_3.getDiffuseColor().r,
+                    light_3.getDiffuseColor().g,
+                    light_3.getDiffuseColor().b
+            );
+            shader_lights.end();
+
+            shader_lights.begin();
+            ofDrawSphere(light_3.getGlobalPosition().rotate(light_3_angle.x, light_3_angle.y, light_3_angle.z), 10);
+            shader_lights.end();
+        }
+    }
 }
 
 void Renderer::drawGui() {
@@ -616,6 +731,7 @@ void Renderer::update() {
 		}
 	}
 	if (!is2D) {
+        updateSelection();
 		ofEnableDepthTest();
 		time_current = ofGetElapsedTimef();
 		time_elapsed = time_current - time_last;
@@ -791,19 +907,74 @@ void Renderer::update() {
     updateShader();
 }
 
-void Renderer::updateShader() {
-    light.setAmbientColor(ofColor(20, 20, 20));
-    light.setDiffuseColor(ofColor(100, 100, 100));
-    light.setSpecularColor(ofColor(100, 100, 100));
+void Renderer::updateSelection() {
+    switch (selected_3D_instance) {
+        case Select_3D::modele:
+            modele_angle = ofVec3f(sliderRotation3DX, sliderRotation3DY, sliderRotation3DZ);
+            break;
 
-    light.setGlobalPosition(ofGetWidth()/2, ofGetHeight()/2, 500.0f);
+        case Select_3D::lumiere:
+            ofLight* temp_light;
+            switch (light_selected) {
+                case Light_select::light1:
+                    light_1_angle = ofVec3f(sliderRotation3DX, sliderRotation3DY, sliderRotation3DZ);
+                    temp_light = &light_1;
+                    break;
+
+                case Light_select::light2:
+                    light_2_angle = ofVec3f(sliderRotation3DX, sliderRotation3DY, sliderRotation3DZ);
+                    temp_light = &light_2;
+                    break;
+
+                case Light_select::light3:
+                    light_3_angle = ofVec3f(sliderRotation3DX, sliderRotation3DY, sliderRotation3DZ);
+                    temp_light = &light_3;
+                    break;
+
+            }
+            if (rgbMode){
+                currentColor = ofColor(redOrHue, greenOrSaturation, blueOrBrightness, alpha);
+            } else {
+                currentColor = ofColor::fromHsb(redOrHue, greenOrSaturation, blueOrBrightness, alpha);
+            }
+            switch (light_selected_aspect) {
+                case Light_aspect::ambient:
+                    temp_light->setAmbientColor(ofColor(currentColor.r, currentColor.g, currentColor.b));
+                    break;
+
+                case Light_aspect::diffuse:
+                    temp_light->setDiffuseColor(ofColor(currentColor.r, currentColor.g, currentColor.b));
+                    break;
+
+                case Light_aspect::specular:
+                    temp_light->setSpecularColor(ofColor(currentColor.r, currentColor.g, currentColor.b));
+                    break;
+            }
+
+        case Select_3D::primitive3D:
+            break;
+
+        case Select_3D::shader:
+            break;
+
+        case Select_3D::surface:
+            break;
+    }
+}
+
+void Renderer::updateShader() {
 
     switch (shader_active) {
         case ShaderType::color_fill:
             shader_name = "Color Fill";
             shader = &shader_color_fill;
             shader->begin();
-            shader->setUniform3f("color", 1.0f, 1.0f, 0.0f);
+            shader->setUniform3f(
+                    "color",
+                    light_1.getAmbientColor().r,
+                    light_1.getAmbientColor().g,
+                    light_1.getAmbientColor().b
+            );
             shader->end();
             break;
 
@@ -811,8 +982,18 @@ void Renderer::updateShader() {
             shader_name = "Lambert";
             shader = &shader_lambert;
             shader->begin();
-            shader->setUniform3f("colorAmbient",  0.1f, 0.1f, 0.1f);
-            shader->setUniform3f("colorDiffuse",  0.6f, 0.6f, 0.6f);
+            shader->setUniform3f(
+                    "colorAmbient",
+                    light_1.getAmbientColor().r,
+                    light_1.getAmbientColor().g,
+                    light_1.getAmbientColor().b
+            );
+            shader->setUniform3f(
+                    "colorDiffuse",
+                    light_1.getDiffuseColor().r,
+                    light_1.getDiffuseColor().g,
+                    light_1.getDiffuseColor().b
+            );
             shader->end();
             break;
 
@@ -820,9 +1001,24 @@ void Renderer::updateShader() {
             shader_name = "Gouraud";
             shader = &shader_gouraud;
             shader->begin();
-            shader->setUniform3f("colorAmbient",  0.1f, 0.1f, 0.1f);
-            shader->setUniform3f("colorDiffuse",  0.6f, 0.6f, 0.0f);
-            shader->setUniform3f("colorSpecular", 1.0f, 1.0f, 0.0f);
+            shader->setUniform3f(
+                    "colorAmbient",
+                    light_1.getAmbientColor().r,
+                    light_1.getAmbientColor().g,
+                    light_1.getAmbientColor().b
+            );
+            shader->setUniform3f(
+                    "colorDiffuse",
+                    light_1.getDiffuseColor().r,
+                    light_1.getDiffuseColor().g,
+                    light_1.getDiffuseColor().b
+            );
+            shader->setUniform3f(
+                    "colorSpecular",
+                    light_1.getSpecularColor().r,
+                    light_1.getSpecularColor().g,
+                    light_1.getSpecularColor().b
+            );
             shader->setUniform1f("brightness", 10.0f);
             shader->end();
             break;
@@ -831,9 +1027,24 @@ void Renderer::updateShader() {
             shader_name = "Phong";
             shader = &shader_phong;
             shader->begin();
-            shader->setUniform3f("colorAmbient",  0.1f, 0.1f, 0.1f);
-            shader->setUniform3f("colorDiffuse",  0.6f, 0.0f, 0.6f);
-            shader->setUniform3f("colorSpecular", 1.0f, 1.0f, 0.0f);
+            shader->setUniform3f(
+                    "colorAmbient",
+                    light_1.getAmbientColor().r,
+                    light_1.getAmbientColor().g,
+                    light_1.getAmbientColor().b
+            );
+            shader->setUniform3f(
+                    "colorDiffuse",
+                    light_1.getDiffuseColor().r,
+                    light_1.getDiffuseColor().g,
+                    light_1.getDiffuseColor().b
+            );
+            shader->setUniform3f(
+                    "colorSpecular",
+                    light_1.getSpecularColor().r,
+                    light_1.getSpecularColor().g,
+                    light_1.getSpecularColor().b
+            );
             shader->setUniform1f("brightness", 10.0f);
             shader->end();
             break;
@@ -844,21 +1055,127 @@ void Renderer::updateShader() {
             shader->begin();
             shader->setUniform3f(
                     "colorAmbient",
-                    light.getAmbientColor().r / 255,
-                    light.getAmbientColor().g / 255,
-                    light.getAmbientColor().b / 255
+                    light_1.getAmbientColor().r,
+                    light_1.getAmbientColor().g,
+                    light_1.getAmbientColor().b
             );
             shader->setUniform3f(
                     "colorDiffuse",
-                    light.getDiffuseColor().r / 255,
-                    light.getDiffuseColor().g / 255,
-                    light.getDiffuseColor().b / 255
+                    light_1.getDiffuseColor().r,
+                    light_1.getDiffuseColor().g,
+                    light_1.getDiffuseColor().b
             );
             shader->setUniform3f(
                     "colorSpecular",
-                    light.getSpecularColor().r / 255,
-                    light.getSpecularColor().g / 255,
-                    light.getSpecularColor().b / 255
+                    light_1.getSpecularColor().r,
+                    light_1.getSpecularColor().g,
+                    light_1.getSpecularColor().b
+            );
+            shader->setUniform1f("brightness", 10.0f);
+            shader->end();
+            break;
+
+        case ShaderType::double_light:
+            shader_name = "2-light-Blinn-Phong";
+            shader = &shader_2_light_blinn_phong;
+            shader->begin();
+            shader->setUniform3f(
+                    "colorAmbient",
+                    light_1.getAmbientColor().r,
+                    light_1.getAmbientColor().g,
+                    light_1.getAmbientColor().b
+            );
+            shader->setUniform3f(
+                    "colorDiffuse",
+                    light_1.getDiffuseColor().r,
+                    light_1.getDiffuseColor().g,
+                    light_1.getDiffuseColor().b
+            );
+            shader->setUniform3f(
+                    "colorSpecular",
+                    light_1.getSpecularColor().r,
+                    light_1.getSpecularColor().g,
+                    light_1.getSpecularColor().b
+            );
+            shader->setUniform3f(
+                    "colorAmbient2",
+                    light_2.getAmbientColor().r,
+                    light_2.getAmbientColor().g,
+                    light_2.getAmbientColor().b
+            );
+            shader->setUniform3f(
+                    "colorDiffuse2",
+                    light_2.getDiffuseColor().r,
+                    light_2.getDiffuseColor().g,
+                    light_2.getDiffuseColor().b
+            );
+            shader->setUniform3f(
+                    "colorSpecular2",
+                    light_2.getSpecularColor().r,
+                    light_2.getSpecularColor().g,
+                    light_2.getSpecularColor().b
+            );
+            shader->setUniform1f("brightness", 10.0f);
+            shader->end();
+            break;
+
+        case ShaderType::triple_light:
+            shader_name = "3-light-Blinn-Phong";
+            shader = &shader_3_light_blinn_phong;
+            shader->begin();
+            shader->setUniform3f(
+                    "colorAmbient",
+                    light_1.getAmbientColor().r,
+                    light_1.getAmbientColor().g,
+                    light_1.getAmbientColor().b
+            );
+            shader->setUniform3f(
+                    "colorDiffuse",
+                    light_1.getDiffuseColor().r,
+                    light_1.getDiffuseColor().g,
+                    light_1.getDiffuseColor().b
+            );
+            shader->setUniform3f(
+                    "colorSpecular",
+                    light_1.getSpecularColor().r,
+                    light_1.getSpecularColor().g,
+                    light_1.getSpecularColor().b
+            );
+            shader->setUniform3f(
+                    "colorAmbient2",
+                    light_2.getAmbientColor().r,
+                    light_2.getAmbientColor().g,
+                    light_2.getAmbientColor().b
+            );
+            shader->setUniform3f(
+                    "colorDiffuse2",
+                    light_2.getDiffuseColor().r,
+                    light_2.getDiffuseColor().g,
+                    light_2.getDiffuseColor().b
+            );
+            shader->setUniform3f(
+                    "colorSpecular2",
+                    light_2.getSpecularColor().r,
+                    light_2.getSpecularColor().g,
+                    light_2.getSpecularColor().b
+            );
+            shader->setUniform3f(
+                    "colorAmbient3",
+                    light_3.getAmbientColor().r,
+                    light_3.getAmbientColor().g,
+                    light_3.getAmbientColor().b
+            );
+            shader->setUniform3f(
+                    "colorDiffuse3",
+                    light_3.getDiffuseColor().r,
+                    light_3.getDiffuseColor().g,
+                    light_3.getDiffuseColor().b
+            );
+            shader->setUniform3f(
+                    "colorSpecular3",
+                    light_3.getSpecularColor().r,
+                    light_3.getSpecularColor().g,
+                    light_3.getSpecularColor().b
             );
             shader->setUniform1f("brightness", 10.0f);
             shader->end();
@@ -939,10 +1256,8 @@ void Renderer::generate_modified_primitive() {
     pair<float, float> temp_origin = model2D.getCurrentPrimitive()->getOrigin();
     preview_primitive = (*model2D.getCurrentPrimitive()).clone();
     fillingMode = is_filled = model2D.getCurrentPrimitive()->getFill();
-    redOrHue = temp_color.r;
-    greenOrSaturation = temp_color.g;
-    blueOrBrightness = temp_color.b;
-    alpha = temp_alpha = temp_color.a;
+    setColor(temp_color.r, temp_color.g, temp_color.b, temp_color.a);
+    temp_alpha = temp_color.a;
     sliderPosX = origin_slider_x = temp_origin.first;
     sliderPosY = origin_slider_y = temp_origin.second;
     sliderEpaisseurLigneContour = current_thickness = preview_primitive->getThickness();
@@ -985,6 +1300,19 @@ void Renderer::deleteSelection() {
         model2D.deleteCurrentPrimitive();
         delete preview_primitive;
     }
+}
+
+void Renderer::setColor(float r, float g, float b, float a) {
+    if (rgbMode) {
+        redOrHue = r;
+        greenOrSaturation = g;
+        blueOrBrightness = b;
+    } else {
+        redOrHue = ofColor(r, g, b).getHue();
+        greenOrSaturation = ofColor(r, g, b).getSaturation();
+        blueOrBrightness = ofColor(r, g, b).getBrightness();
+    }
+    alpha = temp_alpha = a;
 }
 
 void Renderer::undo() {
@@ -1033,9 +1361,9 @@ void Renderer::boutonCerclePressed() {
 
 void Renderer::boutonRectanglePressed() {
     releaseSelection();
-    //draw_tool = DrawTool::primitive;
-    //draw_primitive = DrawPrimitive::rectangle;
-    //ofLog() << "< drawing rectangle enabled>";
+    /**draw_tool = DrawTool::primitive;
+    draw_primitive = DrawPrimitive::rectangle;
+    ofLog() << "< drawing rectangle enabled>";**/
 }
 
 void Renderer::boutonTrianglePressed() {
@@ -1117,12 +1445,14 @@ void Renderer::boutonTetraedrePressed() {
     isGenererModele3D = false;
     isGenererOctaedre = false;
     isGenererTetraedre = true;
+    selected_3D_instance = Select_3D::primitive3D;
 }
 
 void Renderer::boutonOctaedrePressed() {
     isGenererModele3D = false;
     isGenererTetraedre = false;
     isGenererOctaedre = true;
+    selected_3D_instance = Select_3D::primitive3D;
 }
 
 //Si on appuie sur le bouton lapin, le modele 3D devient le lapin
@@ -1134,6 +1464,10 @@ void Renderer::boutonLapinPressed() {
 	isGenererLapin = true;
 	isGenererDragon = false;
 	isGenererModele3D = true;
+    selected_3D_instance = Select_3D::modele;
+    sliderRotation3DX = modele_angle.x;
+    sliderRotation3DY = modele_angle.y;
+    sliderRotation3DZ = modele_angle.z;
     ofLog() << "lapin model loaded";
     ofLog() << "< Shader selected: " << shader_name << " >";
 }
@@ -1147,8 +1481,84 @@ void Renderer::boutonDragonPressed(){
 	isGenererDragon = true;
 	isGenererLapin = false;
 	isGenererModele3D = true;
+    selected_3D_instance = Select_3D::modele;
+    sliderRotation3DX = modele_angle.x;
+    sliderRotation3DY = modele_angle.y;
+    sliderRotation3DZ = modele_angle.z;
     ofLog() << "< Dragon model loaded >";
     ofLog() << "< Shader selected: " << shader_name << " >";
+}
+
+void Renderer::boutonLumierePressed() {
+    if (selected_3D_instance != Select_3D::lumiere) {
+        selected_3D_instance = Select_3D::lumiere;
+        light_selected = Light_select::light1;
+        light_selected_aspect = Light_aspect::ambient;
+        setColor(light_1.getAmbientColor().r*255, light_1.getAmbientColor().g*255, light_1.getAmbientColor().b*255);
+        sliderRotation3DX = light_1_angle.x;
+        sliderRotation3DY = light_1_angle.y;
+        sliderRotation3DZ = light_1_angle.z;
+    }
+    ofLog() << "< Lights selected >";
+}
+
+void Renderer::boutonAmbientPressed() {
+    light_selected_aspect = Light_aspect::ambient;
+    //rgbMode = true;
+    switch (light_selected) {
+        case Light_select::light1:
+            setColor(light_1.getAmbientColor().r*255, light_1.getAmbientColor().g*255, light_1.getAmbientColor().b*255);
+            break;
+
+        case Light_select::light2:
+            setColor(light_2.getAmbientColor().r*255, light_2.getAmbientColor().g*255, light_2.getAmbientColor().b*255);
+            break;
+
+        case Light_select::light3:
+            setColor(light_3.getAmbientColor().r*255, light_3.getAmbientColor().g*255, light_3.getAmbientColor().b*255);
+            break;
+    }
+}
+
+void Renderer::boutonDiffusePressed() {
+    light_selected_aspect = Light_aspect::diffuse;
+    //rgbMode = true;
+    switch (light_selected) {
+        case Light_select::light1:
+            setColor(light_1.getDiffuseColor().r*255, light_1.getDiffuseColor().g*255, light_1.getDiffuseColor().b*255);
+            break;
+
+        case Light_select::light2:
+            setColor(light_2.getDiffuseColor().r*255, light_2.getDiffuseColor().g*255, light_2.getDiffuseColor().b*255);
+            break;
+
+        case Light_select::light3:
+            setColor(light_3.getDiffuseColor().r*255, light_3.getDiffuseColor().g*255, light_3.getDiffuseColor().b*255);
+            break;
+    }
+}
+
+void Renderer::boutonSpeculairePressed() {
+    light_selected_aspect = Light_aspect::specular;
+    //rgbMode = true;
+    switch (light_selected) {
+        case Light_select::light1:
+            setColor(light_1.getSpecularColor().r*255, light_1.getSpecularColor().g*255, light_1.getSpecularColor().b*255);
+            break;
+
+        case Light_select::light2:
+            setColor(light_2.getSpecularColor().r*255, light_2.getSpecularColor().g*255, light_2.getSpecularColor().b*255);
+            break;
+
+        case Light_select::light3:
+            setColor(light_3.getSpecularColor().r*255, light_3.getSpecularColor().g*255, light_3.getSpecularColor().b*255);
+            break;
+    }
+}
+
+void Renderer::boutonShaderPressed() {
+    selected_3D_instance = Select_3D::shader;
+    ofLog() << "< shader selection >";
 }
 
 
@@ -1296,26 +1706,37 @@ void Renderer::genererModele3D() {
     ofSetLineWidth(1);
     ofSetColor(1);
 
-    light.enable();
-    material_basic.begin();
+    light_1.enable();
+    light_2.enable();
+
     shader->begin();
 
-    shader->setUniform3f("lightPosition", light.getGlobalPosition() * ofGetCurrentMatrix(OF_MATRIX_MODELVIEW));
+    shader->setUniform3f("lightPosition", light_1.getGlobalPosition().rotate(light_1_angle.x, light_1_angle.y, light_1_angle.z)-camera->getGlobalPosition());// * ofGetCurrentMatrix(OF_MATRIX_MODELVIEW));
+
+    if (number_of_light > 1) {
+        shader->setUniform3f("lightPosition2", light_2.getGlobalPosition().rotate(light_2_angle.x, light_2_angle.y, light_2_angle.z)-camera->getGlobalPosition());
+        if (number_of_light > 2) {
+            shader->setUniform3f("lightPosition3", light_3.getGlobalPosition().rotate(light_3_angle.x, light_3_angle.y, light_3_angle.z)-camera->getGlobalPosition());
+        }
+    }
+    shader->end();
+
+    shader->begin();
 
     //On ajuste la proportion du modele selon les sliders de proportion
     modele.setScale(sliderProportion3DX / 2, sliderProportion3DY / 2, sliderProportion3DZ / 2);
     //On ajuste l'angle de rotation selon les sliders de rotation
-    modele.setRotation(0, sliderRotation3DX, 1, 0, 0);
-    modele.setRotation(1, sliderRotation3DY, 0, 1, 0);
-    modele.setRotation(2, sliderRotation3DZ + 180, 0, 0, 1);
+    modele.setRotation(0, modele_angle.x, 1, 0, 0);
+    modele.setRotation(1, modele_angle.y, 0, 1, 0);
+    modele.setRotation(2, modele_angle.z + 180, 0, 0, 1);
 
-    modele.setPosition(0, 0, -offset_scene);
+    modele.setPosition(0, 0, 0);
     modele.draw(OF_MESH_FILL);
-    modele.drawFaces();
 
     shader->end();
-    material_basic.end();
-    light.disable();
+
+    light_2.disable();
+    light_1.disable();
 
     // désactiver l'éclairage dynamique
     ofDisableLighting();
@@ -1734,8 +2155,6 @@ void Renderer::filter()
 
 	// écrire les pixels dans l'image de destination
 	filteredImage.setFromPixels(pixel_array_dst);
-
-	//ofLog() << "<convolution filter done>";
 }
 
 //Texture procédural
@@ -2081,6 +2500,7 @@ void Renderer::toggleSurfaceDeCoonsPressed(bool &coons) {
 	} else {
 		isSurfaceParametriqueActive = false;
 	}
+    selected_3D_instance = Select_3D::surface;
 }
 
 void Renderer::resetSurfaceParametrique() {

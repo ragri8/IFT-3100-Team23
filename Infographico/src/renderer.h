@@ -72,7 +72,13 @@ enum class Camera { front, back, left, right, top, down, free, orbit };
 //courbe parametrique
 enum class CurveType { bezier, hermite, splineDeBezier };
 
-enum class ShaderType {color_fill, lambert, gouraud, phong, blinn_phong, custom_1};
+enum class ShaderType {color_fill, lambert, gouraud, phong, blinn_phong, double_light, triple_light};
+
+enum class Light_select {light1, light2, light3};
+
+enum class Light_aspect {ambient, diffuse, specular};
+
+enum class Select_3D {modele, lumiere, shader, primitive3D, surface};
 
 inline void bezier(float t,
 	float p1x, float p1y, float p1z,
@@ -153,7 +159,23 @@ public:
 	//Modele 3D
 	bool isGenererModele3D;
 	ofxAssimpModelLoader modele;
-	ofLight light;
+	ofVec3f modele_angle;
+
+	Select_3D selected_3D_instance;
+	Light_select light_selected;
+	Light_aspect light_selected_aspect;
+
+	ofLight light_1;
+	ofLight light_2;
+	ofLight light_3;
+
+	ofVec3f light_1_angle;
+	ofVec3f light_2_angle;
+	ofVec3f light_3_angle;
+
+	int number_of_light;
+
+	bool isLight2Enabled;
 
 	bool isActiveTranslation3D;
 	bool isActiveRotationX3D;
@@ -284,6 +306,12 @@ public:
 	ofxToggle dessierBoite;
 	ofxLabel labelEffet;
 
+	ofxButton boutonLumiere;
+	ofxButton boutonAmbient;
+	ofxButton boutonDiffuse;
+	ofxButton boutonSpeculaire;
+	ofxButton boutonShader;
+
 	//interface camera
 	ofxLabel labelCamera;
 	ofxLabel labelBougerCamera;
@@ -350,11 +378,15 @@ public:
     ofShader shader_gouraud;
     ofShader shader_phong;
     ofShader shader_blinn_phong;
-    ofShader shader_multiple_light_blinn_phong;
+    ofShader shader_2_light_blinn_phong;
+	ofShader shader_3_light_blinn_phong;
+
+    ofShader shader_lights;
 
     ofShader* shader;
 
     ofMaterial material_basic;
+	ofMaterial light_material;
 
     string shader_name;
 
@@ -454,6 +486,11 @@ public:
 	void boutonOctaedrePressed();
 	void boutonLapinPressed();
 	void boutonDragonPressed();
+	void boutonLumierePressed();
+	void boutonAmbientPressed();
+	void boutonDiffusePressed();
+	void boutonSpeculairePressed();
+	void boutonShaderPressed();
 
 	//Curseur
 	void dessinerCurseur(float x, float y) const;
@@ -495,8 +532,10 @@ public:
 	void draw();
     void draw2D();
     void draw3D();
+    void drawLightSources();
     void drawGui();
 	void update();
+	void updateSelection();
     void updateShader();
 
 	void create_preview();
@@ -506,6 +545,7 @@ public:
     void releaseSelection();
     void releaseWithNoChange();
     void deleteSelection();
+    void setColor(float r, float g, float b, float a=255);
 
 	//Geometrie
 	void genererModele3D();

@@ -1,4 +1,4 @@
-// IFT3100H18 ~ modified_blinn_phong_330_fs.glsl
+// IFT3100H18 ~ blinn_phong_330_fs.glsl
 
 #version 330
 
@@ -11,17 +11,22 @@ out vec4 fragmentColor;
 
 // couleurs de réflexion du matériau
 uniform vec3 colorAmbient;
+uniform vec3 colorAmbient2;
+uniform vec3 colorAmbient3;
 uniform vec3 colorDiffuse;
 uniform vec3 colorDiffuse2;
+uniform vec3 colorDiffuse3;
 uniform vec3 colorSpecular;
 uniform vec3 colorSpecular2;
+uniform vec3 colorSpecular3;
 
 // facteur de brillance spéculaire du matériau
 uniform float brightness;
 
-// position d'une source de lumière
+// position des sources de lumière
 uniform vec3 lightPosition;
-uniform vec3 secondLightPosition;
+uniform vec3 lightPosition2;
+uniform vec3 lightPosition3;
 
 void main()
 {
@@ -30,11 +35,13 @@ void main()
 
   // calculer la direction de la surface vers la lumière (L)
   vec3 L = normalize(lightPosition - viewSpacePosition);
-  vec3 L2 = normalize(secondLightPosition - viewSpacePosition);
+  vec3 L2 = normalize(lightPosition2 - viewSpacePosition);
+  vec3 L3 = normalize(lightPosition3 - viewSpacePosition);
 
   // calculer le niveau de réflexion diffuse (N • L)
   float reflectionDiffuse = max(dot(N, L), 0.0);
   float reflectionDiffuse2 = max(dot(N, L2), 0.0);
+  float reflectionDiffuse3 = max(dot(N, L3), 0.0);
 
   // réflexion spéculaire par défaut
   float reflectionSpecular = 0.0;
@@ -49,7 +56,7 @@ void main()
     vec3 H = normalize(V + L);
 
     // calculer le niveau de réflexion spéculaire (N • H)
-    reflectionSpecular = pow(max(dot(N, H), 0.0), brightness) * 0.6;
+    reflectionSpecular = pow(max(dot(N, H), 0.0), brightness);
   }
   // réflexion spéculaire 2 par défaut
   float reflectionSpecular2 = 0.0;
@@ -65,12 +72,28 @@ void main()
     // calculer le niveau de réflexion spéculaire (N • H)
     reflectionSpecular2 = pow(max(dot(N, H), 0.0), brightness) * 0.6;
   }
+  // réflexion spéculaire 3 par défaut
+  float reflectionSpecular3 = 0.0;
+
+  if (reflectionDiffuse3 > 0.0)
+  {
+    // calculer la direction de la surface vers la caméra (V)
+    vec3 V = normalize(-viewSpacePosition);
+
+    // calculer la direction du demi-vecteur de réflection (H) en fonction du vecteur de vue (V) et de lumière (L)
+    vec3 H = normalize(V + L3);
+
+    // calculer le niveau de réflexion spéculaire (N • H)
+    reflectionSpecular3 = pow(max(dot(N, H), 0.0), brightness) * 0.6;
+  }
 
   // calculer la couleur du fragment
   fragmentColor = vec4(
-    colorAmbient +
+    colorAmbient + colorAmbient2 + colorAmbient3 +
     colorDiffuse * reflectionDiffuse +
-    colorDiffuse * reflectionDiffuse2 +
+    colorDiffuse2 * reflectionDiffuse2 +
+    colorDiffuse3 * reflectionDiffuse3 +
     colorSpecular * reflectionSpecular +
-    colorSpecular2 * reflectionSpecular2, 1.0);
+    colorSpecular2 * reflectionSpecular2 +
+    colorSpecular3 * reflectionSpecular3, 1.0);
 }

@@ -19,15 +19,15 @@ void Application::setup(){
 //--------------------------------------------------------------
 void Application::update(){
 	if (!renderer.is2D) {
+        renderer.is_camera_move_forward = is_key_press_plus;
+        renderer.is_camera_move_backward = is_key_press_moins;
+
+        renderer.is_camera_move_left = is_key_press_left;
+        renderer.is_camera_move_right = is_key_press_right;
+
+        renderer.is_camera_move_up = is_key_press_up;
+        renderer.is_camera_move_down = is_key_press_down;
 		if (renderer.isSurfaceParametriqueActive) {
-			renderer.is_camera_move_forward = is_key_press_plus;
-			renderer.is_camera_move_backward = is_key_press_moins;
-
-			renderer.is_camera_move_left = is_key_press_left;
-			renderer.is_camera_move_right = is_key_press_right;
-
-			renderer.is_camera_move_up = is_key_press_up;
-			renderer.is_camera_move_down = is_key_press_down;
 
 			if (is_key_press_w) {
 				renderer.pointDeControleSelectionneSurface->y += renderer.vitessePointDeControle * time_elapsed;
@@ -41,16 +41,6 @@ void Application::update(){
 			if (is_key_press_s) {
 				renderer.pointDeControleSelectionneSurface->y -= renderer.vitessePointDeControle * time_elapsed;
 			}
-		}
-		else {
-			renderer.is_camera_move_forward = is_key_press_plus;
-			renderer.is_camera_move_backward = is_key_press_moins;
-
-			renderer.is_camera_move_left = is_key_press_left || is_key_press_a;
-			renderer.is_camera_move_right = is_key_press_right || is_key_press_d;
-
-			renderer.is_camera_move_up = is_key_press_up || is_key_press_w;
-			renderer.is_camera_move_down = is_key_press_down || is_key_press_s;
 		}
 	}
 	else {
@@ -79,9 +69,30 @@ void Application::draw(){
 
 //--------------------------------------------------------------
 void Application::keyPressed(int key) {
-    if (key == 768) {
-        renderer.is_ctrl_pressed = true;
+    switch (key) {
+        case 359: // touche v
+            is_key_press_down = true;
+            break;
+
+        case 357: // touche ^
+            is_key_press_up = true;
+            break;
+
+        case 356: // touche <-
+            is_key_press_left = true;
+            break;
+
+        case 358: // touche ->
+            is_key_press_right = true;
+            break;
+
+        case 768:
+            renderer.is_ctrl_pressed = true;
+
+        default:
+            break;
     }
+
 	if (!renderer.is2D) {
 		switch (key) {
             case 97:  // touche A
@@ -126,29 +137,6 @@ void Application::keyPressed(int key) {
 
             default:
                 break;
-		}
-	} else {
-		if (renderer.isCourbeParametriqueActive) {
-			switch (key) {
-                case 359: // touche v
-                    is_key_press_down = true;
-                    break;
-
-                case 357: // touche ^
-                    is_key_press_up = true;
-                    break;
-
-                case 356: // touche <-
-                    is_key_press_left = true;
-                    break;
-
-                case 358: // touche ->
-                    is_key_press_right = true;
-                    break;
-
-                default:
-                    break;
-			}
 		}
 	}
 }
@@ -197,45 +185,162 @@ void Application::keyReleased(int key){
 				is_key_press_moins = false;
 				break;
 
-			case 49: // touche 1
-				renderer.pointDeControleSelectionneSurface = &renderer.pointDeControleSurface1;
-				ofLog() << "<select control point 1>";
-				break;
-
-			case 50: // touche 2
-				renderer.pointDeControleSelectionneSurface = &renderer.pointDeControleSurface2;
-				ofLog() << "<select control point 2>";
-				break;
-
-			case 51: // touche 3
-				renderer.pointDeControleSelectionneSurface = &renderer.pointDeControleSurface3;
-				ofLog() << "<select control point 3>";
-				break;
-
-			case 52: // touche 4
-				renderer.pointDeControleSelectionneSurface = &renderer.pointDeControleSurface4;
-				ofLog() << "<select control point 4>";
-				break;
-
-			case 53: // touche 5
-				renderer.pointDeControleSelectionneSurface = &renderer.pointDeControleSurface5;
-				ofLog() << "<select control point 5>";
-				break;
-
-			case 54: // touche 6
-				renderer.pointDeControleSelectionneSurface = &renderer.pointDeControleSurface6;
-				break;
-
-			case 55: //touche 7
-				renderer.pointDeControleSelectionneSurface = &renderer.pointDeControleSurface7;
-				break;
-
-			case 56: //touche 8
-				renderer.pointDeControleSelectionneSurface = &renderer.pointDeControleSurface8;
-				break;
-
             default:
                 ofLog() << "<key released: " << key << ">"; // Useful for fast key recognition
+                break;
+        }
+        switch (renderer.selected_3D_instance) {
+            case Select_3D::surface:
+                switch (key) {
+                    case 49: // touche 1
+                        renderer.pointDeControleSelectionneSurface = &renderer.pointDeControleSurface1;
+                        ofLog() << "<select control point 1>";
+                        break;
+
+                    case 50: // touche 2
+                        renderer.pointDeControleSelectionneSurface = &renderer.pointDeControleSurface2;
+                        ofLog() << "<select control point 2>";
+                        break;
+
+                    case 51: // touche 3
+                        renderer.pointDeControleSelectionneSurface = &renderer.pointDeControleSurface3;
+                        ofLog() << "<select control point 3>";
+                        break;
+
+                    case 52: // touche 4
+                        renderer.pointDeControleSelectionneSurface = &renderer.pointDeControleSurface4;
+                        ofLog() << "<select control point 4>";
+                        break;
+
+                    case 53: // touche 5
+                        renderer.pointDeControleSelectionneSurface = &renderer.pointDeControleSurface5;
+                        ofLog() << "<select control point 5>";
+                        break;
+
+                    case 54: // touche 6
+                        renderer.pointDeControleSelectionneSurface = &renderer.pointDeControleSurface6;
+                        break;
+
+                    case 55: //touche 7
+                        renderer.pointDeControleSelectionneSurface = &renderer.pointDeControleSurface7;
+                        break;
+
+                    case 56: //touche 8
+                        renderer.pointDeControleSelectionneSurface = &renderer.pointDeControleSurface8;
+                        break;
+
+                    default:
+                        break;
+                }
+                break;
+
+            case Select_3D::lumiere: {
+                ofLight* temp_light = NULL;
+                switch (key) {
+                    case 49: // touche 1
+                        renderer.light_selected = Light_select::light1;
+                        temp_light = &renderer.light_1;
+                        renderer.sliderRotation3DX = renderer.light_1_angle.x;
+                        renderer.sliderRotation3DY = renderer.light_1_angle.y;
+                        renderer.sliderRotation3DZ = renderer.light_1_angle.z;
+                        ofLog() << "< light 1 selected >";
+                        break;
+
+                    case 50: // touche 2
+                        renderer.light_selected = Light_select::light2;
+                        temp_light = &renderer.light_2;
+                        renderer.sliderRotation3DX = renderer.light_2_angle.x;
+                        renderer.sliderRotation3DY = renderer.light_2_angle.y;
+                        renderer.sliderRotation3DZ = renderer.light_2_angle.z;
+                        //ofLight light = *temp_light;
+                        ofLog() << "< light 2 selected >";
+                        break;
+
+                    case 51: // touche 3
+                        renderer.light_selected = Light_select::light3;
+                        temp_light = &renderer.light_3;
+                        renderer.sliderRotation3DX = renderer.light_3_angle.x;
+                        renderer.sliderRotation3DY = renderer.light_3_angle.y;
+                        renderer.sliderRotation3DZ = renderer.light_3_angle.z;
+                        ofLog() << "< light 3 selected >";
+                        break;
+
+                    default:
+                        break;
+                }
+                if (temp_light) {
+                    ofLog() << "A light has been detected";
+                    ofFloatColor temp_color;
+                    switch (renderer.light_selected_aspect) {
+                        case Light_aspect::ambient:
+                            temp_color = temp_light->getAmbientColor();
+                            break;
+
+                        case Light_aspect::diffuse:
+                            temp_color = temp_light->getDiffuseColor();
+                            break;
+
+                        case Light_aspect::specular:
+                            temp_color = temp_light->getSpecularColor();
+                            break;
+                    }
+                    renderer.setColor(temp_color.r*255, temp_color.g*255, temp_color.b*255);
+                } else {
+                    ofLog() << "<no light selected>";
+                }
+                break;
+            }
+
+            case Select_3D::shader:
+                switch (key) {
+                    case 49: // touche 1
+                        renderer.shader_active = ShaderType::color_fill;
+                        renderer.number_of_light = 1;
+                        ofLog() << "<color fill shader selected>";
+                        break;
+
+                    case 50: // touche 2
+                        renderer.shader_active = ShaderType::lambert;
+                        renderer.number_of_light = 1;
+                        ofLog() << "<lambert shader selected>";
+                        break;
+
+                    case 51: // touche 3
+                        renderer.shader_active = ShaderType::gouraud;
+                        renderer.number_of_light = 1;
+                        ofLog() << "<gouraud shader selected>";
+                        break;
+
+                    case 52: // touche 4
+                        renderer.shader_active = ShaderType::phong;
+                        renderer.number_of_light = 1;
+                        ofLog() << "<phong shader selected>";
+                        break;
+
+                    case 53: // touche 5
+                        renderer.shader_active = ShaderType::blinn_phong;
+                        renderer.number_of_light = 1;
+                        ofLog() << "<blinn-phong shader selected>";
+                        break;
+
+                    case 54: // touche 6
+                        renderer.shader_active = ShaderType::double_light;
+                        renderer.number_of_light = 2;
+                        ofLog() << "<double light blinn-phong shader selected>";
+                        break;
+
+                    case 55: //touche 7
+                        renderer.shader_active = ShaderType::triple_light;
+                        renderer.number_of_light = 3;
+                        ofLog() << "<triple light blinn-phong shader selected>";
+                        break;
+
+                    default:
+                        break;
+                }
+                break;
+
+            default:
                 break;
         }
     } else {
