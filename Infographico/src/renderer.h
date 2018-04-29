@@ -294,6 +294,7 @@ public:
 	ofxFloatSlider sliderProportion3DX;
 	ofxFloatSlider sliderProportion3DY;
 	ofxFloatSlider sliderProportion3DZ;
+    ofxFloatSlider sliderPorteeLumiere;
 
 	ofxLabel labelGenerationPrimitiveGeometrique;
 	ofxButton boutonOctaedre;

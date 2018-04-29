@@ -13,11 +13,28 @@ out vec4 fragmentColor;
 uniform vec3 colorAmbient;
 uniform vec3 colorDiffuse;
 
+// portée maximale d'une source de lumière
+uniform float lightRange;
+
 // position d'une source de lumière
 uniform vec3 lightPosition;
 
 void main()
 {
+  // Prend en compte la distance modèle-lumière
+  float D = distance(lightPosition, viewSpacePosition);
+
+  float distFactor = 1;
+  distFactor = (lightRange - D + 10) / lightRange;
+  if (distFactor > 1.0)
+  {
+    distFactor = 1.0;
+  }
+  else if (distFactor < 0.0)
+  {
+    distFactor = 0.0;
+  }
+  
   // re-normaliser la normale après interpolation (N)
   vec3 n = normalize(viewSpaceNormal);
 
@@ -28,5 +45,5 @@ void main()
   float reflection_diffuse = max(dot(n, l), 0.0);
 
   // déterminer la couleur du fragment
-  fragmentColor = vec4(colorAmbient + colorDiffuse * reflection_diffuse, 1.0);
+  fragmentColor = vec4(colorAmbient + colorDiffuse * reflection_diffuse * distFactor, 1.0);
 }

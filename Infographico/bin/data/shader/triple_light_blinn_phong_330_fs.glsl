@@ -23,6 +23,9 @@ uniform vec3 colorSpecular3;
 // facteur de brillance spéculaire du matériau
 uniform float brightness;
 
+// portée maximale d'une source de lumière
+uniform float lightRange;
+
 // position des sources de lumière
 uniform vec3 lightPosition;
 uniform vec3 lightPosition2;
@@ -30,6 +33,45 @@ uniform vec3 lightPosition3;
 
 void main()
 {
+  // Prend en compte les distances modèle-lumière
+  float D = distance(lightPosition, viewSpacePosition);
+
+  float distFactor = 1;
+  distFactor = (lightRange - D + 10) / lightRange;
+  if (distFactor > 1.0)
+  {
+    distFactor = 1.0;
+  }
+  else if (distFactor < 0.0)
+  {
+    distFactor = 0.0;
+  }
+
+  float D2 = distance(lightPosition2, viewSpacePosition);
+
+  float distFactor2 = 1;
+  distFactor2 = (lightRange - D2 + 10) / lightRange;
+  if (distFactor2 > 1.0)
+  {
+    distFactor2 = 1.0;
+  }
+  else if (distFactor2 < 0.0)
+  {
+    distFactor2 = 0.0;
+  }
+
+  float D3 = distance(lightPosition3, viewSpacePosition);
+  float distFactor3 = 1;
+  distFactor3 = (lightRange - D3 + 10) / lightRange;
+  if (distFactor3 > 1.0)
+  {
+    distFactor3 = 1.0;
+  }
+  else if (distFactor3 < 0.0)
+  {
+    distFactor3 = 0.0;
+  }
+
   // re-normaliser la normale après interpolation
   vec3 N = normalize(viewSpaceNormal);
 
@@ -90,10 +132,10 @@ void main()
   // calculer la couleur du fragment
   fragmentColor = vec4(
     colorAmbient + colorAmbient2 + colorAmbient3 +
-    colorDiffuse * reflectionDiffuse +
-    colorDiffuse2 * reflectionDiffuse2 +
-    colorDiffuse3 * reflectionDiffuse3 +
-    colorSpecular * reflectionSpecular +
-    colorSpecular2 * reflectionSpecular2 +
-    colorSpecular3 * reflectionSpecular3, 1.0);
+    colorDiffuse * reflectionDiffuse * distFactor +
+    colorDiffuse2 * reflectionDiffuse2 * distFactor2 +
+    colorDiffuse3 * reflectionDiffuse3 * distFactor3 +
+    colorSpecular * reflectionSpecular * distFactor +
+    colorSpecular2 * reflectionSpecular2 * distFactor2 +
+    colorSpecular3 * reflectionSpecular3 * distFactor3, 1.0);
 }

@@ -17,11 +17,28 @@ uniform vec3 colorSpecular;
 // facteur de brillance spéculaire du matériau
 uniform float brightness;
 
+// portée maximale d'une source de lumière
+uniform float lightRange;
+
 // position d'une source de lumière
 uniform vec3 lightPosition;
 
 void main()
 {
+  // Prend en compte la distance modèle-lumière
+  float D = distance(lightPosition, viewSpacePosition);
+
+  float distFactor = 1;
+  distFactor = (lightRange - D + 10) / lightRange;
+  if (distFactor > 1.0)
+  {
+    distFactor = 1.0;
+  }
+  else if (distFactor < 0.0)
+  {
+    distFactor = 0.0;
+  }
+  
   // re-normaliser la normale après interpolation
   vec3 N = normalize(viewSpaceNormal);
 
@@ -50,6 +67,6 @@ void main()
   // calculer la couleur du fragment
   fragmentColor = vec4(
     colorAmbient +
-    colorDiffuse * reflectionDiffuse +
-    colorSpecular * reflectionSpecular, 1.0);
+    colorDiffuse * reflectionDiffuse * distFactor +
+    colorSpecular * reflectionSpecular * distFactor, 1.0);
 }

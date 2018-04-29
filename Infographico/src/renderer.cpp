@@ -62,7 +62,7 @@ void Renderer::setup() {
 
     light_1_angle = ofVec3f(0, 45, 0);
     light_2_angle = ofVec3f(0, 270, 0);
-    light_3_angle = ofVec3f(30, 0, 0);
+    light_3_angle = ofVec3f(315, 0, 0);
 
     modele_angle = ofVec3f(0, 0, 0);
 
@@ -169,7 +169,7 @@ void Renderer::setup() {
 	guiModel3D.add(labelRotation3D.setup("Rotation Modele 3D", ""));
 	
 	guiModel3D.add(sliderRotation3DX.setup("Rotation X", 0, 0, 360));
-	guiModel3D.add(sliderRotation3DY.setup("Rotation Y", 0, 0, 360));
+	guiModel3D.add(sliderRotation3DY.setup("Rotation Y", 45, 0, 360));
 	guiModel3D.add(sliderRotation3DZ.setup("Rotation Z", 0, 0, 360));
 
 	guiModel3D.add(labelProportion3D.setup("Proportion modele 3D", ""));
@@ -183,6 +183,7 @@ void Renderer::setup() {
     guiModel3D.add(boutonAmbient.setup("Composante ambiante"));
     guiModel3D.add(boutonDiffuse.setup("Composante diffuse"));
     guiModel3D.add(boutonSpeculaire.setup("Composante speculaire"));
+    guiModel3D.add(sliderPorteeLumiere.setup("Portee lumiere", 500, 50, 2000));
     guiModel3D.add(boutonShader.setup("Choisir un shader"));
 	guiModel3D.add(animer.setup("Animer", false));
 	guiModel3D.add(dessierBoite.setup("Dessiner boite", false));
@@ -1054,6 +1055,7 @@ void Renderer::updateShader() {
                     light_1.getDiffuseColor().g,
                     light_1.getDiffuseColor().b
             );
+            shader->setUniform1f("lightRange", sliderPorteeLumiere);
             shader->end();
             break;
 
@@ -1106,6 +1108,7 @@ void Renderer::updateShader() {
                     light_1.getSpecularColor().b
             );
             shader->setUniform1f("brightness", 10.0f);
+            shader->setUniform1f("lightRange", sliderPorteeLumiere);
             shader->end();
             break;
 
@@ -1132,6 +1135,7 @@ void Renderer::updateShader() {
                     light_1.getSpecularColor().b
             );
             shader->setUniform1f("brightness", 10.0f);
+            shader->setUniform1f("lightRange", sliderPorteeLumiere);
             shader->end();
             break;
 
@@ -1176,6 +1180,7 @@ void Renderer::updateShader() {
                     light_2.getSpecularColor().b
             );
             shader->setUniform1f("brightness", 10.0f);
+            shader->setUniform1f("lightRange", sliderPorteeLumiere);
             shader->end();
             break;
 
@@ -1238,6 +1243,7 @@ void Renderer::updateShader() {
                     light_3.getSpecularColor().b
             );
             shader->setUniform1f("brightness", 10.0f);
+            shader->setUniform1f("lightRange", sliderPorteeLumiere);
             shader->end();
             break;
 
