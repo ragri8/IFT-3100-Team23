@@ -9,9 +9,21 @@
 #include "primitives/triangle.h"
 #include "primitives/triangleRect.h"
 #include "historic.h"
+#include "raycast_classes/Vector.h"
+#include "raycast_classes/RayCastRay.h"
+#include "raycast_classes/RayCastSphere.h"
+#include "raycast_classes/RayCastCamera.h"
+#include "raycast_classes/RayCastImage.h"
 #include "ofxAssimpModelLoader.h"
+
+#include <random>
 #include <cmath>
 #include <limits>
+#define _USE_MATH_DEFINES
+#include <math.h>
+#include <sstream> 
+#include <fstream>
+#include <iostream>
 
 // énumération des types de kernel de convolution
 enum class ConvolutionKernel
@@ -215,6 +227,7 @@ public:
 	ofParameter<bool> imageComposition;
 	ofParameter<bool> convolutionFilter;
 	ofParameter<bool> proceduralTexture;
+	ofParameter<bool> raycastRenderer;
 
 	//Image selector pour composition d'image
 	ofxPanel textureCompositionGUI;
@@ -244,7 +257,37 @@ public:
 	ofParameter<bool> ternaryTree;
 	ofParameter<int> branchLength;
 	ofParameter<int> angle;
-	
+
+	//Ray Casting
+	ofxPanel rayCasterGUI;
+	ofParameter<int> widthOfRenderedImage;
+	ofParameter<int> heightOfRenderedImage;
+	ofParameter<int> raysPerPixel;
+	ofxButton renderRayCastImage;
+	ofParameter<bool> viewLastRenderedImage;
+
+	string lastRayCastResultPath;
+	ofImage lastRayCastResult;
+	bool rayCastResultLoaded;
+
+	// paramètres du programme
+	const int max_depth = 5;
+	const double camera_fov = 0.5135;
+	double gamma_correction = 1 / 2.2;
+	int image_width = 0;
+	int image_height = 0;
+	int ray_per_pixel = 0;
+	int pixel_count = 0;
+	std::vector<RayCastSphere> scene; // déclaration d'un graphe de scène
+	Vector ray_cast_camera_orientation = Vector(0, -0.042612, -1).normalize();
+	Vector ray_cast_camera_position = Vector(50, 52, 295.6);
+	RayCastCamera ray_cast_camera = RayCastCamera(ray_cast_camera_position, ray_cast_camera_orientation); // déclaration de la caméra utilisée pour rendre la scène
+	RayCastImage image; // déclaration d'une image
+	std::random_device rd; // source d'entropie
+	std::mt19937 rng{ rd() }; // générateur de nombres pseudo-aléatoires (mersenne twister)
+	std::uniform_real_distribution<double> random01{ 0.0, 1.0 }; // distribution uniforme entre 0 et 1
+
+
 	//*******************************************//
 	//********************GUI********************//
 	//*******************************************//
@@ -610,11 +653,22 @@ public:
 	void drawBinaryTree(int length);
 	void drawTernaryTree(int length);
 
+	//Ray tracing functions
+	void boutonRenderRayCastImagePressed();
+	void viewLastRayCastImageToggled(bool &viewRayTraceResult);
+	double clamp(double x);
+	int format_color_component(double value);
+	bool raycast(const RayCastRay& ray, double& distance, int& id);
+	Vector compute_radiance(const RayCastRay& ray, int depth);
+	void setupRaycastScene();
+	void render();
+	void save_image_file(int width, int height, int ray_per_pixel, const Vector* pixel);
 
 	//Traitement d'image
 	void compositionToggled(bool &composition);
 	void convolutionToggled(bool &convolution);
-	void proceduralToggled(bool &procedural);	
+	void proceduralToggled(bool &procedural);
+	void raycastToggled(bool &raycast);	
 
 	void image_export(const std::string name, const std::string extension) const;
 
