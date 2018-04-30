@@ -96,6 +96,7 @@ void Renderer::setup() {
 	imageComposition.addListener(this, &Renderer::compositionToggled);
 	convolutionFilter.addListener(this, &Renderer::convolutionToggled);
 	proceduralTexture.addListener(this, &Renderer::proceduralToggled);
+	raycastRenderer.addListener(this, &Renderer::raycastToggled);
 	
 
     //menu
@@ -111,6 +112,7 @@ void Renderer::setup() {
 	guiMenu.add(imageComposition.set("Composition", false));
 	guiMenu.add(convolutionFilter.set("Filtre de convolution", false));
 	guiMenu.add(proceduralTexture.set("Texture Procedurale", false));
+	guiMenu.add(raycastRenderer.set("Raycast Renderer", false));
 
 	guiMenu.add(labelCourbeParametrique.setup("Courbes parametriques", ""));
 	guiMenu.add(labelPointDeControle.setup("Point de controle", ""));
@@ -247,6 +249,17 @@ void Renderer::setup() {
 	textureProceduralGUI.add(ternaryTree.set("Ternary Tree", false));
 	textureProceduralGUI.add(branchLength.set("branch length", 100, 100, 300));
 	textureProceduralGUI.add(angle.set("branch angle", 30, 0, 360));
+
+	// initialisation de l'interface graphique pour ray tracing
+	renderRayCastImage.addListener(this, &Renderer::boutonRenderRayCastImagePressed);
+	viewLastRenderedImage.addListener(this, &Renderer::viewLastRayCastImageToggled);
+	rayCasterGUI.setup();
+	rayCasterGUI.setName("RAY CASTING");
+	rayCasterGUI.add(widthOfRenderedImage.set("Raycast image width", 128, 100, 512));
+	rayCasterGUI.add(heightOfRenderedImage.set("Raycast image height", 128, 100, 512));
+	rayCasterGUI.add(raysPerPixel.set("Rays per pixel", 20, 10, 100));
+	rayCasterGUI.add(renderRayCastImage.setup("Render ray cast image"));
+	rayCasterGUI.add(viewLastRenderedImage.set("View last ray cast",false));
 
     ofAddListener(ofEvents().mouseReleased, this, &Renderer::mouseReleased, OF_EVENT_ORDER_BEFORE_APP - 100);
 
@@ -449,13 +462,11 @@ void Renderer::draw2D() {
         ofSetColor(255, 255, 255, 255);
         //ofDisableBlendMode();
     }
-    else if (aiguiser || detectionBordure || bosseler || flou) {
-        filteredImage.allocate(currentImage.getWidth(), currentImage.getHeight(), OF_IMAGE_COLOR);
-        //filter();
+    else if (aiguiser || detectionBordure || bosseler || flou) {        
         filteredImage.draw(guiMenu.getWidth(), 0, currentImage.getWidth(), currentImage.getHeight());
     }
     else if (ternaryTree || binaryTree) {
-        ofSetColor(255, 255, 255, 255);
+        ofSetColor(currentColor);
         ofSetLineWidth(2);
 
         if (ternaryTree) {
@@ -470,7 +481,11 @@ void Renderer::draw2D() {
             drawBinaryTree(branchLength);
             ofPopMatrix();
         }
+		ofSetColor(255, 255, 255, 255);
     }
+	else if (raycastRenderer && viewLastRenderedImage) {
+		lastRayCastResult.draw(guiMenu.getWidth(), 0, lastRayCastResult.getWidth(), lastRayCastResult.getHeight());
+	}
     else if(toggleAfficherImage) {
         currentImage.draw(guiMenu.getWidth(), 0, currentImage.getWidth(), currentImage.getHeight());
     }
@@ -536,7 +551,7 @@ void Renderer::draw2D() {
         default:
             break;
         }
-    }
+    }	
 }
 
 void Renderer::draw3D() {
@@ -730,6 +745,11 @@ void Renderer::drawGui() {
         textureProceduralGUI.setPosition(0, colorPickerGUI.getPosition().y + colorPickerGUI.getHeight() + 20);
         textureProceduralGUI.draw();
     }
+	// definir position de l'interface graphique de ray tracing
+	if (raycastRenderer) {
+		rayCasterGUI.setPosition(0, colorPickerGUI.getPosition().y + colorPickerGUI.getHeight() + 20);
+		rayCasterGUI.draw();
+	}
 }
 
 void Renderer::update() {
@@ -2055,7 +2075,8 @@ void Renderer::aiguiserToggled(bool & aiguiser) {
 		flou.set(false);
 		kernel_type = ConvolutionKernel::sharpen;
 		kernel_name = "aiguiser";
-        filter();
+		filteredImage.allocate(currentImage.getWidth(), currentImage.getHeight(), OF_IMAGE_COLOR);
+		filter();
 	}
 }
 
@@ -2066,7 +2087,8 @@ void Renderer::detectionBordureToggled(bool & detectionBordure) {
 		flou.set(false);
 		kernel_type = ConvolutionKernel::edge_detect;
 		kernel_name = "détection de bordure";
-        filter();
+		filteredImage.allocate(currentImage.getWidth(), currentImage.getHeight(), OF_IMAGE_COLOR);
+		filter();
 	}
 }
 
@@ -2077,7 +2099,8 @@ void Renderer::bosselerToggled(bool & bosseler) {
 		flou.set(false);
 		kernel_type = ConvolutionKernel::emboss;
 		kernel_name = "bosseler";
-        filter();
+		filteredImage.allocate(currentImage.getWidth(), currentImage.getHeight(), OF_IMAGE_COLOR);
+		filter();
 	}
 }
 
@@ -2088,7 +2111,8 @@ void Renderer::flouToggled(bool & flou) {
 		bosseler.set(false);
 		kernel_type = ConvolutionKernel::blur;
 		kernel_name = "flou";
-        filter();
+		filteredImage.allocate(currentImage.getWidth(), currentImage.getHeight(), OF_IMAGE_COLOR);
+		filter();
 	}
 }
 
@@ -2274,7 +2298,7 @@ void Renderer::drawTernaryTree(int length)
 	if (length > 2) {
 		drawTernaryTree(length);
 	}
-	ofPopMatrix();
+	ofPopMatrix();	
 }
 
 void Renderer::drawBinaryTree(int length) {
@@ -2296,11 +2320,372 @@ void Renderer::drawBinaryTree(int length) {
 	}
 }
 
+// Ray tracing
+
+// fonction pour borner une valeur numérique entre 0 et 1
+double Renderer::clamp(double x)
+{
+	return x < 0 ? 0 : x > 1 ? 1 : x;
+}
+
+// traitement de la couleur d'un pixel
+int Renderer::format_color_component(double value)
+{
+	// appliquer la correction gamma
+	value = pow(clamp(value), gamma_correction);
+
+	// convertir la valeur dans l'espace de couleur
+	value = value * 255 + 0.5;
+
+	// conversion numérique de réel vers entier
+	return static_cast<int>(value);
+}
+
+// fonction qui valide s'il y a intersection entre un rayon et les géométries de la scène
+// retourne l'intersection la plus près de la caméra (distance et index de l'élément)
+bool Renderer::raycast(const RayCastRay& ray, double& distance, int& id)
+{
+	// variable temporaire pour la distance d'une intersection entre un rayon et une sphère
+	double d;
+
+	// initialiser la distance à une valeur suffisamment éloignée pour qu'on la considère comme l'infini
+	double infinity = distance = 1e20;
+
+	// nombre d'éléments dans la scène
+	int n = static_cast<int>(scene.size());
+
+	// parcourir tous les éléments de la scène
+	for (int index = 0; index < n; ++index)
+	{
+		// test d'intersection entre le rayon et la géométrie à cet index
+		d = scene[index].intersect(ray);
+
+		// valider s'il y a eu intersection et si la distance est inférieur aux autres intesections
+		if (d && d < distance)
+		{
+			// nouvelle valeur courante de la distance et l'index de l'intersection la plus rapprochée de la caméra
+			distance = d;
+			id = index;
+		}
+	}
+
+	// il y a eu intersection si la distance est plus petite que l'infini
+	if (distance < infinity)
+		return true;
+	else
+		return false;
+}
+
+// fonction récursive qui calcule la radiance
+Vector Renderer::compute_radiance(const RayCastRay& ray, int depth)
+{
+	// valeur de la radiance
+	Vector radiance;
+
+	// distance de l'intersection (TODO par rapport à quoi?!)
+	double distance;
+
+	// identifiant de la géométrie en intersection
+	int id = 0;
+
+	// valider s'il n'y a pas intersection
+	if (!raycast(ray, distance, id))
+		return Vector(); // couleur par défault (noir)
+
+						 // référence sur une géométrie en intersection avec un rayon
+	const RayCastSphere& obj = scene[id];
+
+	// calculer la coordonnées du point d'intersection
+	Vector x = ray.origin + ray.direction * distance;
+
+	// calculer la normale au point d'intersection
+	Vector n = (x - obj.position).normalize();
+
+	// ajustement de la direction de la normale
+	Vector na = n.dot(ray.direction) < 0 ? n : n * -1;
+
+	// isoler la composante de couleur la plus puissante
+	Vector f = obj.color;
+	double threshold = f.x > f.y && f.x > f.z ? f.x : f.y > f.z ? f.y : f.z;
+
+	// valider si la limite du nombre de récursion est atteinte
+	if (++depth > max_depth)
+	{
+		// test de probabilité
+		if (random01(rng) < threshold)
+			f = f * (1 / threshold);
+		else
+			return obj.emission;
+	}
+
+	if (obj.material == SurfaceType::diffuse)
+	{
+		// matériau avec réflexion diffuse
+
+		double r1 = 2 * M_PI * random01(rng);
+		double r2 = random01(rng);
+		double r2s = sqrt(r2);
+
+		Vector w = na;
+		Vector u = ((fabs(w.x) > 0.1 ? Vector(0, 1) : Vector(1)).cross(w)).normalize();
+		Vector v = w.cross(u);
+		Vector d = (u * cos(r1) * r2s + v * sin(r1) * r2s + w * sqrt(1 - r2)).normalize();
+
+		radiance = obj.emission + f.multiply(compute_radiance(RayCastRay(x, d), depth));
+
+		return radiance;
+	}
+	else if (obj.material == SurfaceType::specular)
+	{
+		// matériau avec réflexion spéculaire
+
+		radiance = obj.emission + f.multiply(compute_radiance(RayCastRay(x, ray.direction - n * 2.0 * n.dot(ray.direction)), depth));
+
+		return radiance;
+	}
+	else if (obj.material == SurfaceType::refraction)
+	{
+		// matériau avec réflexion réfraction
+
+		RayCastRay reflection_ray(x, ray.direction - n * 2.0 * n.dot(ray.direction));
+
+		bool into = n.dot(na) > 0;
+
+		double nc = 1.0;
+		double nt = 1.5;
+		double nnt = into ? nc / nt : nt / nc;
+		double ddn = ray.direction.dot(na);
+		double cos2t;
+
+		if ((cos2t = 1.0 - nnt * nnt * (1.0 - ddn * ddn)) < 0.0)
+		{
+			radiance = obj.emission + f.multiply(compute_radiance(reflection_ray, depth));
+
+			return radiance;
+		}
+
+		Vector tdir = (ray.direction * nnt - n * ((into ? 1.0 : -1.0) * (ddn * nnt + sqrt(cos2t)))).normalize();
+
+		double a = nt - nc;
+		double b = nt + nc;
+		double r0 = a * a / (b * b);
+		double c = 1.0 - (into ? -ddn : tdir.dot(n));
+		double re = r0 + (1.0 - r0) * c*c*c*c*c;
+		double tr = 1 - re;
+		double p = 0.25 + 0.5 * re;
+		double rp = re / p;
+		double tp = tr / (1.0 - p);
+
+		radiance = obj.emission + f.multiply(depth > 2 ? (random01(rng) < p ?
+			compute_radiance(reflection_ray, depth) * rp : compute_radiance(RayCastRay(x, tdir), depth) * tp) :
+			compute_radiance(reflection_ray, depth) * re + compute_radiance(RayCastRay(x, tdir), depth) * tr);
+
+		return radiance;
+	}
+	else
+	{
+		return radiance;
+	}
+}
+
+void Renderer::setupRaycastScene() {
+
+	ofLog() << "scene setup";
+
+	constexpr double anchor = 1e5;
+	constexpr double wall_radius = anchor;
+
+	constexpr double box_size_x = 100.0;
+	constexpr double box_size_y = 81.6;
+	constexpr double box_size_z = 81.6;
+
+	constexpr double box_x_min = 0.0;
+	constexpr double box_x_max = box_size_x;
+	constexpr double box_y_min = 0.0;
+	constexpr double box_y_max = box_size_y;
+	constexpr double box_z_min = 0.0;
+	constexpr double box_z_max = box_size_z;
+
+	constexpr double box_center_x = (box_x_max - box_x_min) / 2.0;
+	constexpr double box_center_y = (box_y_max - box_y_min) / 2.0;
+	constexpr double box_center_z = (box_z_max - box_z_min) / 2.0;
+
+	// vider la scène de son contenu
+	scene.clear();
+
+	// génération du contenu de la scène
+	scene.insert(scene.begin(), {
+
+		// approximation d'une boîte de Cornell avec des sphères sur-dimensionnées qui simulent des surfaces planes
+		RayCastSphere(wall_radius, Vector(box_center_x, anchor, box_size_z),   Vector(), Vector(0.75, 0.75, 0.75), SurfaceType::diffuse),    // plancher
+		RayCastSphere(wall_radius, Vector(box_center_x, -anchor + box_size_y, box_size_z),   Vector(), Vector(0.75, 0.75, 0.75), SurfaceType::diffuse),    // plafond
+		RayCastSphere(wall_radius, Vector(anchor + 1, box_center_y, box_size_z),   Vector(), Vector(1, 0, 0), SurfaceType::diffuse),    // mur gauche
+		RayCastSphere(wall_radius, Vector(box_center_x, box_center_y, anchor), Vector(), Vector(0, 1, 0), SurfaceType::diffuse),    // mur arrière
+		RayCastSphere(wall_radius, Vector(-anchor + 99, box_center_y, box_size_z), Vector(), Vector(0, 0, 1), SurfaceType::diffuse),    // mur droit
+		RayCastSphere(wall_radius, Vector(box_center_x, box_center_y, -anchor + 170), Vector(), Vector(0.0,  0.0,  0.0),  SurfaceType::diffuse),    // mur avant
+
+		// ensemble des sphères situées à l'intérieur de la boîte de Cornell
+		RayCastSphere(22.5, Vector(30, 30, 40), Vector(), Vector(1.0, 1.0, 1.0), SurfaceType::specular), // sphère mirroir
+		RayCastSphere(17.5, Vector(75, 40, 75), Vector(), Vector(1.0, 1.0, 1.0), SurfaceType::refraction), // sphère de verre
+
+		RayCastSphere(600,  Vector(box_center_x, 600.0 + box_size_z - 0.27, box_size_z), Vector(15, 15, 15), Vector(0.0, 0.0, 0.0), SurfaceType::diffuse) // sphère lumineuse
+		});
+
+	// allocation de la mémoire de l'image en fonction des paramètres du programme
+	image.resize(image_width, image_height);
+
+	ofLog() << "image resize to " << image.width << "x" << image.height << " (" << image.count << " pixels) " << image.size << " MB)";
+
+	// calibration de la caméra
+	ray_cast_camera.viewport_width = image.width;
+	ray_cast_camera.viewport_height = image.height;
+	ray_cast_camera.fov = camera_fov;
+	ray_cast_camera.calibrate();
+}
+
+
+// fonction de rendu de la scène
+void Renderer::render()
+{
+	ofLog() << "render start";
+
+	unsigned short x = 0;
+
+	int index, y, s, sx, sy = 0;
+
+	float progression = 0.0f;
+
+	double r1, r2 = 0.0;
+	double dx, dy = 0.0;
+
+	Vector radiance;
+
+	Vector distance;
+
+	// itération sur les rangées de pixels
+	for (y = 0; y < image_height; ++y)
+	{
+		// calculer le pourcentage de progression
+		progression = 100.0f * y / (image_height - 1.0f);
+
+		// afficher le pourcentage de progression du rendu dans la console
+		fprintf(stderr, "\rraytracing (%d rays per pixel) : %4.1f %%", ray_per_pixel, progression);
+
+		// itération sur les colonnes de pixels
+		for (x = 0; x < image_width; ++x)
+		{
+			// déterminer l'index du pixel
+			index = (image_height - y - 1) * image_width + x;
+
+			// itération sur les rangées du bloc de 2x2 échantillons
+			for (sy = 0; sy < 2; ++sy)
+			{
+				// itération sur les colonnes du bloc de 2x2 échantillons
+				for (sx = 0; sx < 2; ++sx)
+				{
+					// initialiser la radiance
+					radiance = Vector();
+
+					// itération des sur les rayons par pixel
+					for (s = 0; s < ray_per_pixel; ++s)
+					{
+						// filtre de la tente
+						r1 = 2.0 * random01(rng);
+						dx = r1 < 1.0 ? sqrt(r1) - 1.0 : 1.0 - sqrt(2.0 - r1);
+
+						r2 = 2.0 * random01(rng);
+						dy = r2 < 1.0 ? sqrt(r2) - 1.0 : 1.0 - sqrt(2.0 - r2);
+
+						// calculer la distance de ...
+						distance = ray_cast_camera.axis_x * (((sx + 0.5 + dx) / 2.0 + x) / image_width - 0.5) +
+							ray_cast_camera.axis_y * (((sy + 0.5 + dy) / 2.0 + y) / image_height - 0.5) + ray_cast_camera.axis_z;
+
+						// appel récursif du calcul de la radiance
+						radiance = radiance + compute_radiance(RayCastRay(ray_cast_camera.position + distance * 140, distance.normalize()), 0) * (1.0 / ray_per_pixel);
+					}
+
+					image.pixel[index] = image.pixel[index] + Vector(clamp(radiance.x), clamp(radiance.y), clamp(radiance.z)) * 0.25;
+				}
+			}
+		}
+	}
+
+	ofLog() << "\nrender done";
+}
+
+// fonction qui permet de sauvegarder des pixels dans un fichier image (format .ppm)
+void Renderer::save_image_file(int width, int height, int ray_per_pixel, const Vector* pixel)
+{
+	ofFileDialogResult result = ofSystemSaveDialog("default.jpg", "Save");
+	if (result.bSuccess) {
+
+		string path = result.getPath();
+		is_menu_displayed = false;
+		draw();
+
+		// nom du fichier image de type .ppm (portable pixmap)
+		std::stringstream ss;
+		ss << path << width << "x" << height << "_" << ray_per_pixel << ".ppm";
+		std::string filename = ss.str();
+
+		// déclaration et ouverture du fichier en mode écriture
+		std::ofstream file;
+		file.open(filename, std::ios::out);
+
+		// entête du ficher pour une image avec un espace de couleur RGB 24 bits (P3 pour pixmap)
+		file << "P3\n";
+
+		// largeur et hauteur de l'image sur la seconde ligne de l'entête
+		file << width << ' ' << height << '\n';
+
+		// valeur maximale de l'espace de couleur sur la troisième ligne de l'entête
+		file << "255\n";
+
+		// écriture des pixels dans le fichier image
+		for (int index = 0; index < width * height; ++index)
+		{
+			// écrire la couleur du pixel dans le fichier image
+			file << static_cast<std::uint32_t>(format_color_component(pixel[index].x)) << " ";
+			file << static_cast<std::uint32_t>(format_color_component(pixel[index].y)) << " ";
+			file << static_cast<std::uint32_t>(format_color_component(pixel[index].z)) << " ";
+		}
+
+		// fermeture du fichier
+		file.close();
+
+		lastRayCastResultPath = filename;
+
+		is_menu_displayed = true;
+	}	
+}
+
+void Renderer::boutonRenderRayCastImagePressed() {
+
+	image_width = widthOfRenderedImage;
+	image_height = heightOfRenderedImage;
+	ray_per_pixel = raysPerPixel;
+
+	setupRaycastScene();
+	render();
+	save_image_file(image.width, image.height, ray_per_pixel, image.pixel);
+	viewLastRenderedImage = true;
+}
+
+void Renderer::viewLastRayCastImageToggled(bool &viewRayTraceResult) {
+	if (viewRayTraceResult) {
+		load_image(lastRayCastResultPath, lastRayCastResult, rayCastResultLoaded);
+	}
+	else {
+
+	}
+}
+
 //Traitement d'image
 void Renderer::compositionToggled(bool &composition) {
 	if (composition) {
 		convolutionFilter.set(false);
 		proceduralTexture.set(false);
+		raycastRenderer.set(false);
 	}
 }
 
@@ -2308,6 +2693,7 @@ void Renderer::convolutionToggled(bool &convolution) {
 	if (convolution) {
 		imageComposition.set(false);
 		proceduralTexture.set(false);
+		raycastRenderer.set(false);
 	}
 }
 
@@ -2315,6 +2701,15 @@ void Renderer::proceduralToggled(bool &procedural) {
 	if (procedural) {
 		imageComposition.set(false);
 		convolutionFilter.set(false);
+		raycastRenderer.set(false);
+	}
+}
+
+void Renderer::raycastToggled(bool &raycast) {
+	if (raycast) {
+		imageComposition.set(false);
+		convolutionFilter.set(false);
+		proceduralTexture.set(false);
 	}
 }
 
