@@ -18,6 +18,15 @@ uniform vec3 colorAmbient;
 uniform vec3 colorDiffuse;
 uniform vec3 colorSpecular;
 
+// portée maximale d'une source de lumière
+uniform float lightRange;
+
+// couleur de la lumière
+uniform vec3 lightColor;
+
+// couleur de la lumière ambiente
+uniform vec3 lightAmbient;
+
 // facteur de brillance spéculaire du matériau
 uniform float brightness;
 
@@ -34,6 +43,20 @@ void main()
 
   // transformation de la position du sommet dans l'espace de vue
   vec3 viewSpacePosition = vec3(modelViewMatrix * position);
+
+  // Prend en compte la distance modèle-lumière
+  float D = distance(lightPosition, viewSpacePosition);
+
+  float distFactor = 1;
+  distFactor = (lightRange - D + 10) / lightRange;
+  if (distFactor > 1.0)
+  {
+    distFactor = 1.0;
+  }
+  else if (distFactor < 0.0)
+  {
+    distFactor = 0.0;
+  }
 
   // re-normaliser la normale
   vec3 N = normalize(viewSpaceNormal);
@@ -62,9 +85,9 @@ void main()
 
   // calculer la couleur du fragment
   interpolationColor = vec3(
-    colorAmbient +
-    colorDiffuse * reflectionDiffuse +
-    colorSpecular * reflectionSpecular);
+    colorAmbient * lightAmbient +
+    colorDiffuse * reflectionDiffuse * lightColor * distFactor +
+    colorSpecular * reflectionSpecular * lightColor * distFactor);
 
   // transformation de la position du sommet par les matrices de modèle, vue et projection
   gl_Position = projectionMatrix * modelViewMatrix * position;

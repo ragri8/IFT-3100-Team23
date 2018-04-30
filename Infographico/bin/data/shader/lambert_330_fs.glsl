@@ -16,6 +16,12 @@ uniform vec3 colorDiffuse;
 // portée maximale d'une source de lumière
 uniform float lightRange;
 
+// couleur de la lumière
+uniform vec3 lightColor;
+
+// couleur de la lumière ambiente
+uniform vec3 lightAmbient;
+
 // position d'une source de lumière
 uniform vec3 lightPosition;
 
@@ -45,5 +51,5 @@ void main()
   float reflection_diffuse = max(dot(n, l), 0.0);
 
   // déterminer la couleur du fragment
-  fragmentColor = vec4(colorAmbient + colorDiffuse * reflection_diffuse * distFactor, 1.0);
+  fragmentColor = vec4(colorAmbient * lightAmbient + colorDiffuse * reflection_diffuse * lightColor * distFactor, 1.0);
 }

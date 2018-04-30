@@ -11,14 +11,16 @@ out vec4 fragmentColor;
 
 // couleurs de réflexion du matériau
 uniform vec3 colorAmbient;
-uniform vec3 colorAmbient2;
-uniform vec3 colorAmbient3;
 uniform vec3 colorDiffuse;
-uniform vec3 colorDiffuse2;
-uniform vec3 colorDiffuse3;
 uniform vec3 colorSpecular;
-uniform vec3 colorSpecular2;
-uniform vec3 colorSpecular3;
+
+// couleur de la lumière
+uniform vec3 lightColor;
+uniform vec3 lightColor2;
+uniform vec3 lightColor3;
+
+// couleur de la lumière ambiente
+uniform vec3 lightAmbient;
 
 // facteur de brillance spéculaire du matériau
 uniform float brightness;
@@ -131,11 +133,11 @@ void main()
 
   // calculer la couleur du fragment
   fragmentColor = vec4(
-    colorAmbient + colorAmbient2 + colorAmbient3 +
-    colorDiffuse * reflectionDiffuse * distFactor +
-    colorDiffuse2 * reflectionDiffuse2 * distFactor2 +
-    colorDiffuse3 * reflectionDiffuse3 * distFactor3 +
-    colorSpecular * reflectionSpecular * distFactor +
-    colorSpecular2 * reflectionSpecular2 * distFactor2 +
-    colorSpecular3 * reflectionSpecular3 * distFactor3, 1.0);
+    colorAmbient * lightAmbient +
+    colorDiffuse * (lightColor * reflectionDiffuse * distFactor +
+    lightColor2 * reflectionDiffuse2 * distFactor2 +
+    lightColor3 * reflectionDiffuse3 * distFactor3) +
+    colorSpecular * (lightColor * reflectionSpecular * distFactor +
+    lightColor2 * reflectionSpecular2 * distFactor2 +
+    lightColor3 * reflectionSpecular3 * distFactor3), 1.0);
 }

@@ -153,6 +153,9 @@ void Application::keyReleased(int key){
 				is_key_press_d = false;
 				break;
 
+            case 104: // touche H, pour "help"
+                break;
+
 			case 359: // touche v
 				is_key_press_down = false;
 				break;
@@ -235,11 +238,14 @@ void Application::keyReleased(int key){
                 break;
 
             case Select_3D::lumiere: {
-                ofLight* temp_light = NULL;
+                //ofLight* temp_light = NULL;
+                ofFloatColor temp_color;
                 switch (key) {
                     case 49: // touche 1
                         renderer.light_selected = Light_select::light1;
-                        temp_light = &renderer.light_1;
+                        temp_color = renderer.light_1.getAmbientColor();
+                        renderer.setColor(temp_color.r*255, temp_color.g*255, temp_color.b*255);
+                        //temp_light = &renderer.light_1;
                         renderer.sliderRotation3DX = renderer.light_1_angle.x;
                         renderer.sliderRotation3DY = renderer.light_1_angle.y;
                         renderer.sliderRotation3DZ = renderer.light_1_angle.z;
@@ -248,7 +254,9 @@ void Application::keyReleased(int key){
 
                     case 50: // touche 2
                         renderer.light_selected = Light_select::light2;
-                        temp_light = &renderer.light_2;
+                        temp_color = renderer.light_2.getAmbientColor();
+                        renderer.setColor(temp_color.r*255, temp_color.g*255, temp_color.b*255);
+                        //temp_light = &renderer.light_2;
                         renderer.sliderRotation3DX = renderer.light_2_angle.x;
                         renderer.sliderRotation3DY = renderer.light_2_angle.y;
                         renderer.sliderRotation3DZ = renderer.light_2_angle.z;
@@ -258,16 +266,23 @@ void Application::keyReleased(int key){
 
                     case 51: // touche 3
                         renderer.light_selected = Light_select::light3;
-                        temp_light = &renderer.light_3;
+                        temp_color = renderer.light_3.getAmbientColor();
+                        renderer.setColor(temp_color.r*255, temp_color.g*255, temp_color.b*255);
+                        //temp_light = &renderer.light_3;
                         renderer.sliderRotation3DX = renderer.light_3_angle.x;
                         renderer.sliderRotation3DY = renderer.light_3_angle.y;
                         renderer.sliderRotation3DZ = renderer.light_3_angle.z;
                         ofLog() << "< light 3 selected >";
                         break;
 
+                    case 52: // touche 4
+                        renderer.light_selected = Light_select::ambient;
+                        temp_color = renderer.ambient_light.getAmbientColor();
+                        renderer.setColor(temp_color.r*255, temp_color.g*255, temp_color.b*255);
+
                     default:
                         break;
-                }
+                }/**
                 if (temp_light) {
                     ofLog() << "A light has been detected";
                     ofFloatColor temp_color;
@@ -287,6 +302,27 @@ void Application::keyReleased(int key){
                     renderer.setColor(temp_color.r*255, temp_color.g*255, temp_color.b*255);
                 } else {
                     ofLog() << "<no light selected>";
+                }**/
+                break;
+            }
+
+            case Select_3D::material: {
+                ofFloatColor temp_color;
+                switch(renderer.material_aspect_selected) {
+                    case Material_aspect::ambient:
+                        temp_color = renderer.material_basic.getAmbientColor();
+                        renderer.setColor(temp_color.r*255, temp_color.g*255, temp_color.b*255);
+                        break;
+
+                    case Material_aspect::diffuse:
+                        temp_color = renderer.material_basic.getDiffuseColor();
+                        renderer.setColor(temp_color.r*255, temp_color.g*255, temp_color.b*255);
+                        break;
+
+                    case Material_aspect::specular:
+                        temp_color = renderer.material_basic.getSpecularColor();
+                        renderer.setColor(temp_color.r*255, temp_color.g*255, temp_color.b*255);
+                        break;
                 }
                 break;
             }
@@ -346,6 +382,9 @@ void Application::keyReleased(int key){
     } else {
         if (renderer.isCourbeParametriqueActive) {
             switch (key) {
+                case 104: // touche H, pour "help"
+                    break;
+
                 case 359: // touche v
                     is_key_press_down = false;
                     break;
@@ -408,6 +447,9 @@ void Application::keyReleased(int key){
             switch (key) {
                 case 8: // backspace
                     renderer.deleteSelection();
+                    break;
+
+                case 104: // touche H, pour "help"
                     break;
 
                 case 127: // delete, same as backspace

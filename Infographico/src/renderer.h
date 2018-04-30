@@ -74,11 +74,13 @@ enum class CurveType { bezier, hermite, splineDeBezier };
 
 enum class ShaderType {color_fill, lambert, gouraud, phong, blinn_phong, double_light, triple_light};
 
-enum class Light_select {light1, light2, light3};
+enum class Light_select {light1, light2, light3, ambient};
+
+enum class Material_aspect {ambient, diffuse, specular};
 
 enum class Light_aspect {ambient, diffuse, specular};
 
-enum class Select_3D {modele, lumiere, shader, primitive3D, surface};
+enum class Select_3D {modele, lumiere, material, shader, primitive3D, surface};
 
 inline void bezier(float t,
 	float p1x, float p1y, float p1z,
@@ -163,11 +165,13 @@ public:
 
 	Select_3D selected_3D_instance;
 	Light_select light_selected;
+    Material_aspect material_aspect_selected;
 	Light_aspect light_selected_aspect;
 
 	ofLight light_1;
 	ofLight light_2;
 	ofLight light_3;
+    ofLight ambient_light;
 
 	ofVec3f light_1_angle;
 	ofVec3f light_2_angle;
@@ -390,7 +394,8 @@ public:
     ofShader* shader;
 
     ofMaterial material_basic;
-	ofMaterial light_material;
+
+    ofColor primitive_color;
 
     string shader_name;
 

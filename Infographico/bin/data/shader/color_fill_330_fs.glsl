@@ -5,10 +5,13 @@
 // couleur de remplissage du matériau
 uniform vec3 color;
 
+// couleur de la lumière ambiente
+uniform vec3 lightAmbient;
+
 out vec4 fragmentColor;
 
 void main()
 {
   // déterminer la couleur du fragment
-  fragmentColor = vec4(color, 1.0);
+  fragmentColor = vec4(color * lightAmbient, 1.0);
 }
