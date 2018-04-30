@@ -607,6 +607,7 @@ void Renderer::draw3D() {
     ofDisableDepthTest();
 
     if (isSurfaceParametriqueActive) {
+        ofEnableDepthTest();
 
         shader->begin();
 
@@ -649,6 +650,8 @@ void Renderer::draw3D() {
 			}
 		}
         shader->end();
+
+        ofDisableDepthTest();
     }
     if (isGenererModele3D) {
         genererModele3D();
@@ -3052,10 +3055,10 @@ void Renderer::resetSurfaceParametrique() {
 	float h_3_5 = (screenHeight * 3.0f / 5.0f) - screenHeight / 2;
 	float profondeur = 200;
 
-	pointDeControleSurface1 = { w_1_4, h_3_5, 0 };
-	pointDeControleSurface2 = { w_1_4, h_2_5, 0 };
-	pointDeControleSurface3 = { w_3_4, h_3_5, 0 };
-	pointDeControleSurface4 = { w_3_4, h_2_5, 0 };
+	pointDeControleSurface1 = { w_1_4, h_3_5, -profondeur };
+	pointDeControleSurface2 = { w_1_4, h_2_5, -profondeur };
+	pointDeControleSurface3 = { w_3_4, h_3_5, -profondeur };
+	pointDeControleSurface4 = { w_3_4, h_2_5, -profondeur };
 	pointDeControleSurface5 = { w_1_4, h_3_5, profondeur };
 	pointDeControleSurface6 = { w_1_4, h_2_5, profondeur };
 	pointDeControleSurface7 = { w_3_4, h_3_5, profondeur };
@@ -3100,25 +3103,7 @@ void Renderer::toggleActiverBrumePressed(bool &brume) {
         shader_lights.begin();
         shader_lights.setUniform1f("fogOpacity", 0.0f);
         shader_lights.end();
-		glDisable(GL_FOG);
 	}
-}
-
-void Renderer::activerBrume() {
-
-	glEnable(GL_LIGHTING);
-
-	ofColor blanc = ofColor(1, 1, 1, 1.0f);
-	GLfloat couleursPourBlanc[4] = { blanc.r, blanc.g, blanc.b, blanc.a };
-	glFogi(GL_FOG_MODE, GL_LINEAR);
-	glFogfv(GL_FOG_COLOR, couleursPourBlanc);
-	glFogf(GL_FOG_DENSITY, 1);
-	glHint(GL_FOG_HINT, GL_DONT_CARE);
-	glFogf(GL_FOG_START, camera->getPosition().z + 500);
-	glFogf(GL_FOG_END, camera->getPosition().z + -800);
-	glFogi(GL_FOG_COORD_SRC, GL_FOG_COORDINATE);
-
-	glEnable(GL_FOG);
 }
 
 Renderer::~Renderer() {

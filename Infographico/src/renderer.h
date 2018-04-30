@@ -677,8 +677,6 @@ public:
 	//Camera
 	void setup_camera();
 	void resetCamera();
-	//brume
-	void activerBrume();
 
 	~Renderer();
 
