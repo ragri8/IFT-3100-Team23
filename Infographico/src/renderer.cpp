@@ -306,11 +306,16 @@ void Renderer::setup() {
     shader_lights.setUniform3f("lightColor", 1.0f, 1.0f, 1.0f);
     shader_lights.setUniform3f("lightAmbient", 1.0f, 1.0f, 1.0f);
     shader_lights.setUniform1f("lightRange", 50.0f);
+    shader_lights.setUniform1f("fogOpacity", 0.0f);
     shader_lights.end();
 
     shader_active = ShaderType::blinn_phong;
 
     shader = &shader_blinn_phong;
+
+    shader->begin();
+    shader->setUniform1f("fogOpacity", 0.0f);
+    shader->end();
 
     // shininess is a value between 0 - 128, 128 being the most shiny //
     material_basic.setShininess( 100 );
@@ -361,6 +366,7 @@ void Renderer::setup() {
 
 	//interface brume
 	guiModel3D.add(toogleActiverBrume.set("Activer brume", false));
+    guiModel3D.add(sliderBrume.setup("Densite brume", 0.2f, 0.0f, 1.0f));
 	//interface camera
 	guiModel3D.add(labelCamera.setup("Camera", ""));
 	guiModel3D.add(labelBougerCamera.setup("Pour bouger", "Fleches"));
@@ -391,6 +397,8 @@ void Renderer::setup() {
 	toggleRightCamera.addListener(this, &Renderer::toggleRightCameraPressed);
 	toggleTopCamera.addListener(this, &Renderer::toggleTopCameraPressed);
 	toggleBottomCamera.addListener(this, &Renderer::toggleBottomCameraPressed);
+
+    toggleFrontCamera.set(true);
 
 	toggleProjectionOrthogonale.addListener(this, &Renderer::toggleProjectionOrthogonalePressed);
 	toggleProjectionPerspective.addListener(this, &Renderer::toggleProjectionPerspectivePressed);
@@ -579,7 +587,7 @@ void Renderer::draw3D() {
 
     ofEnableDepthTest();
     if (brumeActiver) {
-        activerBrume();
+        //activerBrume();
     }
     ofDisableDepthTest();
 
@@ -926,37 +934,30 @@ void Renderer::update() {
 }
 
 void Renderer::updateSelection() {
-    //ofLog() << "updateSelection() called";
     switch (selected_3D_instance) {
         case Select_3D::modele:
             modele_angle = ofVec3f(sliderRotation3DX, sliderRotation3DY, sliderRotation3DZ);
             break;
 
         case Select_3D::lumiere:
-            //ofLog() << "select_3D::lumiere accessed?";
-            //ofLight* temp_light;
             if (rgbMode){
                 currentColor = ofColor(redOrHue, greenOrSaturation, blueOrBrightness, alpha);
             } else {
                 currentColor = ofColor::fromHsb(redOrHue, greenOrSaturation, blueOrBrightness, alpha);
             }
-            //ofLog() << "before light_selected switch case";
             switch (light_selected) {
                 case Light_select::light1:
                     light_1_angle = ofVec3f(sliderRotation3DX, sliderRotation3DY, sliderRotation3DZ);
-                    //temp_light = &light_1;
                     light_1.setAmbientColor(ofColor(currentColor.r, currentColor.g, currentColor.b));
                     break;
 
                 case Light_select::light2:
                     light_2_angle = ofVec3f(sliderRotation3DX, sliderRotation3DY, sliderRotation3DZ);
-                    //temp_light = &light_2;
                     light_2.setAmbientColor(ofColor(currentColor.r, currentColor.g, currentColor.b));
                     break;
 
                 case Light_select::light3:
                     light_3_angle = ofVec3f(sliderRotation3DX, sliderRotation3DY, sliderRotation3DZ);
-                    //temp_light = &light_3;
                     light_3.setAmbientColor(ofColor(currentColor.r, currentColor.g, currentColor.b));
                     break;
 
@@ -965,9 +966,7 @@ void Renderer::updateSelection() {
 
                 default:
                     break;
-
             }
-            //ofLog() << "after light_selected switch case";
             break;
 
         case Select_3D::material:
@@ -997,7 +996,6 @@ void Renderer::updateSelection() {
         case Select_3D::surface:
             break;
     }
-    //ofLog() << "got through updateSelection()";
 }
 
 void Renderer::updateShader() {
@@ -1271,6 +1269,15 @@ void Renderer::updateShader() {
         default:
             break;
     }
+    if (brumeActiver) {
+        shader->begin();
+        shader->setUniform1f("fogOpacity", sliderBrume);
+        shader->end();
+        shader_lights.begin();
+        shader_lights.setUniform1f("fogOpacity", sliderBrume);
+        shader_lights.end();
+    }
+
 }
 
 void Renderer::create_preview() {
@@ -1600,20 +1607,6 @@ void Renderer::boutonAmbientPressed() {
     setColor(material_basic.getAmbientColor().r*255,
              material_basic.getAmbientColor().g*255,
              material_basic.getAmbientColor().b*255);
-    //rgbMode = true;
-    /**switch (light_selected) {
-        case Light_select::light1:
-            setColor(light_1.getAmbientColor().r*255, light_1.getAmbientColor().g*255, light_1.getAmbientColor().b*255);
-            break;
-
-        case Light_select::light2:
-            setColor(light_2.getAmbientColor().r*255, light_2.getAmbientColor().g*255, light_2.getAmbientColor().b*255);
-            break;
-
-        case Light_select::light3:
-            setColor(light_3.getAmbientColor().r*255, light_3.getAmbientColor().g*255, light_3.getAmbientColor().b*255);
-            break;
-    }**/
 }
 
 void Renderer::boutonDiffusePressed() {
@@ -1622,20 +1615,6 @@ void Renderer::boutonDiffusePressed() {
     setColor(material_basic.getDiffuseColor().r*255,
              material_basic.getDiffuseColor().g*255,
              material_basic.getDiffuseColor().b*255);
-    //rgbMode = true;
-    /**switch (light_selected) {
-        case Light_select::light1:
-            setColor(light_1.getDiffuseColor().r*255, light_1.getDiffuseColor().g*255, light_1.getDiffuseColor().b*255);
-            break;
-
-        case Light_select::light2:
-            setColor(light_2.getDiffuseColor().r*255, light_2.getDiffuseColor().g*255, light_2.getDiffuseColor().b*255);
-            break;
-
-        case Light_select::light3:
-            setColor(light_3.getDiffuseColor().r*255, light_3.getDiffuseColor().g*255, light_3.getDiffuseColor().b*255);
-            break;
-    }**/
 }
 
 void Renderer::boutonSpeculairePressed() {
@@ -1644,20 +1623,6 @@ void Renderer::boutonSpeculairePressed() {
     setColor(material_basic.getSpecularColor().r*255,
              material_basic.getSpecularColor().g*255,
              material_basic.getSpecularColor().b*255);
-    //rgbMode = true;
-    /**switch (light_selected) {
-        case Light_select::light1:
-            setColor(light_1.getSpecularColor().r*255, light_1.getSpecularColor().g*255, light_1.getSpecularColor().b*255);
-            break;
-
-        case Light_select::light2:
-            setColor(light_2.getSpecularColor().r*255, light_2.getSpecularColor().g*255, light_2.getSpecularColor().b*255);
-            break;
-
-        case Light_select::light3:
-            setColor(light_3.getSpecularColor().r*255, light_3.getSpecularColor().g*255, light_3.getSpecularColor().b*255);
-            break;
-    }**/
 }
 
 void Renderer::boutonShaderPressed() {
@@ -2046,32 +2011,51 @@ void Renderer::rgbModeSwitched(bool &rgbMode) {
 
 //Generer boite autour des modeles 3D
 void Renderer::genererBoite() {
+    // activer l'occlusion en profondeur
+    ofEnableDepthTest();
+
+    // activer l'éclairage dynamique
+    ofEnableLighting();
 
 	ofSetColor(currentColor);
 
 	if (isGenererLapin) {
-		boite = ofBoxPrimitive(500, 700, 350);
+		boite = ofBoxPrimitive(402, 402, 320);
 		//On met la boite à la meme position que le modele pour obtenir un rotation symetrique au modele
-		boite.setPosition((screenWidth / 2), screenHeight*0.75, 0);
+		boite.setPosition(0, 0, 0);
 		//On suit la meme rotation que le modele
-		boite.rotate(-sliderRotation3DX, 1, 0, 0);
-		boite.rotate(-sliderRotation3DY, 0, 1, 0);
-		boite.rotate(sliderRotation3DZ, 0, 0, 1);
+        boite.rotate(-modele_angle.x, 1, 0, 0);
+		boite.rotate(-modele_angle.y, 0, 1, 0);
+		boite.rotate(modele_angle.z, 0, 0, 1);
+        ofVec3f offset_boite = ofVec3f(
+                44*sliderProportion3DX,
+                -152*sliderProportion3DY,
+                0);
+        offset_boite.rotate(modele_angle.x, modele_angle.y, modele_angle.z);
+        boite.move(-offset_boite.x, -offset_boite.y, offset_boite.z);
 		boite.setScale(sliderProportion3DX, sliderProportion3DY, sliderProportion3DZ);
 		boite.draw();
 	}
 	else if (isGenererDragon) {
-		boite = ofBoxPrimitive(400, 600, 200);
+		boite = ofBoxPrimitive(410, 300, 210);
 		//On met la boite à la meme position que le modele pour obtenir un rotation symetrique au modele
-		boite.setPosition((screenWidth / 2), screenHeight*0.75, 0);
+		boite.setPosition(0, 0, 0);
 		//On suit la meme rotation que le modele
-		boite.rotate(-sliderRotation3DX, 1, 0, 0);
-		boite.rotate(-sliderRotation3DY, 0, 1, 0);
-		boite.rotate(sliderRotation3DZ, 0, 0, 1);
+        boite.rotate(-modele_angle.x, 1, 0, 0);
+		boite.rotate(-modele_angle.y, 0, 1, 0);
+		boite.rotate(modele_angle.z, 0, 0, 1);
+        ofVec3f offset_boite = ofVec3f(0, -145*sliderProportion3DY, 0);
+        offset_boite.rotate(modele_angle.x, modele_angle.y, modele_angle.z);
+        boite.move(-offset_boite.x, -offset_boite.y, offset_boite.z);
 
 		boite.setScale(sliderProportion3DX, sliderProportion3DY, sliderProportion3DZ);
 		boite.draw();
 	}
+
+    // désactiver l'éclairage dynamique
+    ofDisableLighting();
+    // désactiver l'occlusion en profondeur
+    ofDisableDepthTest();
 }
 
 //animation des modeles 3D
@@ -2442,6 +2426,7 @@ void Renderer::resetCamera() {
 
 	// caméra par défaut
 	camera_active = Camera::front;
+    toggleFrontCamera.set(true);
 
 	ofLog() << "<reset>";
 }
@@ -2709,8 +2694,17 @@ void Renderer::toogleTriangulationPressed(bool &triangulation) {
 void Renderer::toggleActiverBrumePressed(bool &brume) {
 	if (brume) {
 		brumeActiver = true;
+        shader->begin();
+        shader->setUniform1f("fogOpacity", sliderBrume);
+        shader->end();
 	} else {
 		brumeActiver = false;
+        shader->begin();
+        shader->setUniform1f("fogOpacity", 0.0f);
+        shader->end();
+        shader_lights.begin();
+        shader_lights.setUniform1f("fogOpacity", 0.0f);
+        shader_lights.end();
 		glDisable(GL_FOG);
 	}
 }

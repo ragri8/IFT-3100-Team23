@@ -21,6 +21,9 @@ uniform vec3 colorSpecular;
 // portée maximale d'une source de lumière
 uniform float lightRange;
 
+// opacité de la brume, nombre de teinte par pixel parcouru
+uniform float fogOpacity;
+
 // couleur de la lumière
 uniform vec3 lightColor;
 
@@ -43,6 +46,10 @@ void main()
 
   // transformation de la position du sommet dans l'espace de vue
   vec3 viewSpacePosition = vec3(modelViewMatrix * position);
+
+  // composante de brume en fonction de la distance et de son opacité
+  float fogValue = length(viewSpacePosition) * fogOpacity / 255;
+  vec3 fog = vec3(fogValue, fogValue, fogValue);
 
   // Prend en compte la distance modèle-lumière
   float D = distance(lightPosition, viewSpacePosition);
@@ -87,7 +94,7 @@ void main()
   interpolationColor = vec3(
     colorAmbient * lightAmbient +
     colorDiffuse * reflectionDiffuse * lightColor * distFactor +
-    colorSpecular * reflectionSpecular * lightColor * distFactor);
+    colorSpecular * reflectionSpecular * lightColor * distFactor + fog);
 
   // transformation de la position du sommet par les matrices de modèle, vue et projection
   gl_Position = projectionMatrix * modelViewMatrix * position;

@@ -26,6 +26,9 @@ uniform float brightness;
 // portée maximale d'une source de lumière
 uniform float lightRange;
 
+// opacité de la brume, nombre de teinte par pixel parcouru
+uniform float fogOpacity;
+
 // position d'une source de lumière
 uniform vec3 lightPosition;
 
@@ -44,6 +47,10 @@ void main()
   {
     distFactor = 0.0;
   }
+
+  // composante de brume en fonction de la distance et de son opacité
+  float fogValue = length(viewSpacePosition) * fogOpacity / 255;
+  vec3 fog = vec3(fogValue, fogValue, fogValue);
   
   // re-normaliser la normale après interpolation
   vec3 N = normalize(viewSpaceNormal);
@@ -74,5 +81,5 @@ void main()
   fragmentColor = vec4(
     colorAmbient * lightAmbient +
     colorDiffuse * reflectionDiffuse * lightColor * distFactor +
-    colorSpecular * reflectionSpecular * lightColor * distFactor, 1.0);
+    colorSpecular * reflectionSpecular * lightColor * distFactor + fog, 1.0);
 }
