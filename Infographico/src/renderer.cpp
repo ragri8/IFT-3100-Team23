@@ -189,6 +189,7 @@ void Renderer::setup() {
     guiModel3D.add(boutonDiffuse.setup("Composante diffuse"));
     guiModel3D.add(boutonSpeculaire.setup("Composante speculaire"));
     guiModel3D.add(sliderPorteeLumiere.setup("Portee lumiere", 500, 50, 2000));
+    guiModel3D.add(sliderBrightness.setup("Brillance", 5, 0, 10));
     guiModel3D.add(boutonShader.setup("Choisir un shader"));
 	guiModel3D.add(animer.setup("Animer", false));
 	guiModel3D.add(dessierBoite.setup("Dessiner boite", false));
@@ -1109,7 +1110,7 @@ void Renderer::updateShader() {
                     material_basic.getSpecularColor().g,
                     material_basic.getSpecularColor().b
             );
-            shader->setUniform1f("brightness", 10.0f);
+            shader->setUniform1f("brightness", sliderBrightness);
             shader->setUniform1f("lightRange", sliderPorteeLumiere);
             shader->end();
             break;
@@ -1148,7 +1149,7 @@ void Renderer::updateShader() {
                     material_basic.getSpecularColor().g,
                     material_basic.getSpecularColor().b
             );
-            shader->setUniform1f("brightness", 10.0f);
+            shader->setUniform1f("brightness", sliderBrightness);
             shader->setUniform1f("lightRange", sliderPorteeLumiere);
             shader->end();
             break;
@@ -1187,7 +1188,7 @@ void Renderer::updateShader() {
                     material_basic.getSpecularColor().g,
                     material_basic.getSpecularColor().b
             );
-            shader->setUniform1f("brightness", 5.0f);
+            shader->setUniform1f("brightness", sliderBrightness);
             shader->setUniform1f("lightRange", sliderPorteeLumiere);
             shader->end();
             break;
@@ -1232,7 +1233,7 @@ void Renderer::updateShader() {
                     material_basic.getSpecularColor().g,
                     material_basic.getSpecularColor().b
             );
-            shader->setUniform1f("brightness", 10.0f);
+            shader->setUniform1f("brightness", sliderBrightness);
             shader->setUniform1f("lightRange", sliderPorteeLumiere);
             shader->end();
             break;
@@ -1284,7 +1285,7 @@ void Renderer::updateShader() {
                     material_basic.getSpecularColor().g,
                     material_basic.getSpecularColor().b
             );
-            shader->setUniform1f("brightness", 10.0f);
+            shader->setUniform1f("brightness", sliderBrightness);
             shader->setUniform1f("lightRange", sliderPorteeLumiere);
             shader->end();
             break;

@@ -342,6 +342,7 @@ public:
 	ofxFloatSlider sliderProportion3DY;
 	ofxFloatSlider sliderProportion3DZ;
     ofxFloatSlider sliderPorteeLumiere;
+    ofxFloatSlider sliderBrightness;
     ofxFloatSlider sliderBrume;
 
 	ofxLabel labelGenerationPrimitiveGeometrique;
